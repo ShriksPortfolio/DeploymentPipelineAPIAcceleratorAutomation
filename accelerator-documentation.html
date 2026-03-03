@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deployment Pipeline API Accelerator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#FAF8F5;--card:#FFFFFF;--card2:#F1EDE8;
+--text:#2D2B28;--text2:#6B6560;
+--accent:#C4653A;--accent-light:rgba(196,101,58,0.08);
+--green:#5B8C5A;--green-bg:#EEF4ED;
+--orange:#C4883A;--orange-bg:#FDF3E7;
+--grey:#8B8580;--grey-bg:#F0ECE8;
+--pill:#E8E5E1;
+--radius-sm:8px;--radius-md:12px;--radius-lg:20px;--radius-pill:980px;
+--shadow-sm:0 1px 3px rgba(45,43,40,0.04);
+--shadow-md:0 4px 12px rgba(45,43,40,0.06);
+--shadow-lg:0 8px 30px rgba(45,43,40,0.08);
+--transition:0.3s cubic-bezier(0.25,0.1,0.25,1);
+--font-body:'Inter',system-ui,-apple-system,sans-serif;
+--font-heading:'Fraunces',Georgia,serif;
+--font-code:'Fira Code','SF Mono','Cascadia Code',monospace;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--font-heading);letter-spacing:-0.02em;line-height:1.2}
+.container{max-width:1100px;margin:0 auto;padding:0 24px}
+/* Brand Header */
+.brand-header{padding:16px 0;border-bottom:1px solid var(--card2);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);background:rgba(250,248,245,0.85);position:sticky;top:0;z-index:100}
+.brand-inner{display:flex;align-items:center;gap:12px}
+.brand-logo{width:40px;height:40px;border-radius:var(--radius-sm);background:linear-gradient(135deg,var(--accent),#e8845c);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;font-family:var(--font-heading)}
+.brand-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);font-weight:600}
+.brand-author{font-size:13px;color:var(--text2)}
+.brand-sep{width:1px;height:24px;background:var(--card2)}
+/* Hero */
+.hero{padding:64px 0 48px}
+.hero h1{font-size:42px;font-weight:700;margin-bottom:12px;background:linear-gradient(135deg,var(--text),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:17px;color:var(--text2);max-width:640px;margin-bottom:32px}
+.intro-card{background:var(--card);border-left:4px solid var(--accent);border-radius:var(--radius-md);padding:28px 32px;box-shadow:var(--shadow-sm);line-height:1.7;color:var(--text2);font-size:15px}
+.intro-card strong{color:var(--text)}
+/* Nav Pills */
+.nav-pills{padding:24px 0;display:flex;flex-wrap:wrap;gap:10px}
+.nav-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius-pill);background:var(--pill);border:1px solid rgba(45,43,40,0.06);font-size:13px;font-weight:500;color:var(--text);cursor:pointer;transition:var(--transition);text-decoration:none}
+.nav-pill:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm);background:#E0DCD7}
+/* Summary Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:20px;padding:40px 0}
+.stat-card{background:var(--card);border-radius:var(--radius-md);padding:28px 20px;text-align:center;box-shadow:var(--shadow-sm);transition:var(--transition)}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.stat-num{font-family:var(--font-heading);font-size:36px;font-weight:700;color:var(--accent);line-height:1}
+.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text2);margin-top:8px;font-weight:600}
+/* Section headers */
+.section{padding:48px 0}
+.section-title{font-size:28px;font-weight:700;margin-bottom:8px}
+.section-sub{font-size:15px;color:var(--text2);margin-bottom:32px}
+/* Before/After */
+.ba-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px}
+.ba-col{border-radius:var(--radius-lg);padding:32px;position:relative;overflow:hidden}
+.ba-before{background:#FFF5F5;border:1px solid #f0d0d0}
+.ba-after{background:var(--green-bg);border:1px solid #c8dcc7}
+.ba-col h3{font-size:20px;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.ba-before h3{color:#c0392b}
+.ba-after h3{color:var(--green)}
+.ba-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;font-size:14px;color:var(--text2)}
+.ba-before .ba-item{text-decoration:line-through;opacity:0.7}
+.ba-after .ba-item{opacity:1}
+.ba-icon{flex-shrink:0;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff}
+.ba-before .ba-icon{background:#e74c3c}
+.ba-after .ba-icon{background:var(--green)}
+.ba-summary{margin-top:20px;padding:16px;border-radius:var(--radius-md);font-size:14px;font-weight:600;text-align:center}
+.ba-before .ba-summary{background:rgba(231,76,60,0.08);color:#c0392b}
+.ba-after .ba-summary{background:rgba(91,140,90,0.12);color:var(--green)}
+/* Architecture Flow */
+.flow-wrapper{overflow-x:auto;padding:20px 0}
+.flow-track{display:flex;align-items:center;gap:0;min-width:900px;justify-content:center}
+.flow-node{display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:var(--transition);position:relative}
+.flow-node:hover{transform:translateY(-3px)}
+.flow-circle{width:64px;height:64px;border-radius:50%;background:var(--card);border:3px solid var(--pill);display:flex;align-items:center;justify-content:center;font-size:22px;transition:var(--transition);box-shadow:var(--shadow-sm)}
+.flow-node:hover .flow-circle,.flow-node.active .flow-circle{border-color:var(--accent);box-shadow:0 0 0 6px var(--accent-light),var(--shadow-md)}
+.flow-label{font-size:11px;font-weight:600;margin-top:8px;color:var(--text2);text-align:center;max-width:80px}
+.flow-connector{width:40px;height:2px;background:linear-gradient(90deg,var(--pill),var(--accent),var(--pill));flex-shrink:0;position:relative;margin-bottom:20px}
+.flow-connector::after{content:'';position:absolute;right:-3px;top:-3px;width:8px;height:8px;border-right:2px solid var(--accent);border-top:2px solid var(--accent);transform:rotate(45deg)}
+.flow-detail{background:var(--card);border-radius:var(--radius-md);padding:28px 32px;box-shadow:var(--shadow-md);margin-top:24px;display:none;border-top:3px solid var(--accent);animation:slideDown 0.3s ease}
+.flow-detail.show{display:block}
+.flow-detail h4{margin-bottom:12px;color:var(--accent)}
+.flow-detail p{font-size:14px;color:var(--text2);margin-bottom:16px}
+.code-peek{background:#1e1e1e;color:#d4d4d4;border-radius:var(--radius-sm);padding:16px 20px;font-family:var(--font-code);font-size:12.5px;line-height:1.7;overflow-x:auto;margin-top:12px}
+.code-peek .kw{color:#569cd6}.code-peek .str{color:#ce9178}.code-peek .fn{color:#dcdcaa}.code-peek .cm{color:#6a9955}
+@keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+/* Benefits */
+.filter-bar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:28px}
+.filter-chip{padding:8px 20px;border-radius:var(--radius-pill);background:var(--card);border:2px solid var(--pill);font-size:13px;font-weight:500;cursor:pointer;transition:var(--transition);display:inline-flex;align-items:center;gap:8px}
+.filter-chip:hover{border-color:var(--text2)}
+.filter-chip.active{border-color:var(--accent);box-shadow:0 0 0 3px rgba(196,101,58,0.08);background:rgba(196,101,58,0.04)}
+.filter-count{background:var(--pill);border-radius:var(--radius-pill);padding:1px 8px;font-size:11px;font-weight:600}
+.benefits-table{width:100%;border-collapse:separate;border-spacing:0}
+.benefits-table thead{background:var(--text);color:#fff;font-size:10px;text-transform:uppercase;letter-spacing:1px}
+.benefits-table thead th{padding:14px 18px;text-align:left;font-weight:600}
+.benefits-table thead th:first-child{border-radius:var(--radius-md) 0 0 0}
+.benefits-table thead th:last-child{border-radius:0 var(--radius-md) 0 0}
+.benefits-table tbody tr{transition:var(--transition)}
+.benefits-table tbody tr:hover{background:rgba(196,101,58,0.03)}
+.benefits-table td{padding:14px 18px;border-bottom:1px solid var(--card2);font-size:14px;vertical-align:middle}
+.badge{display:inline-block;padding:3px 14px;border-radius:var(--radius-pill);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+.badge-high{background:var(--green-bg);color:var(--green)}
+.badge-mid{background:var(--orange-bg);color:var(--orange)}
+.badge-low{background:var(--grey-bg);color:var(--grey)}
+/* Governance Radar */
+.gov-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.radar-canvas-wrap{display:flex;justify-content:center}
+.gov-pillars{display:flex;flex-direction:column;gap:12px}
+.gov-pillar{background:var(--card);border-radius:var(--radius-md);padding:18px 22px;box-shadow:var(--shadow-sm);cursor:pointer;transition:var(--transition);border-left:4px solid transparent}
+.gov-pillar:hover,.gov-pillar.active{border-left-color:var(--accent);transform:translateX(4px)}
+.gov-pillar h4{font-size:15px;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between}
+.gov-pillar p{font-size:13px;color:var(--text2);display:none}
+.gov-pillar.active p{display:block}
+.gov-score{font-size:12px;font-weight:600;padding:2px 10px;border-radius:var(--radius-pill)}
+/* ROI Calculator */
+.roi-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+.roi-inputs{display:flex;flex-direction:column;gap:20px}
+.roi-field label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text2);font-weight:600;margin-bottom:6px}
+.roi-field input{width:100%;padding:12px 16px;border:2px solid var(--pill);border-radius:var(--radius-md);font-family:var(--font-body);font-size:16px;transition:var(--transition);background:var(--card)}
+.roi-field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
+.roi-results{background:var(--card);border-radius:var(--radius-lg);padding:36px;box-shadow:var(--shadow-md);border-top:4px solid var(--accent)}
+.roi-result-item{text-align:center;padding:16px 0;border-bottom:1px solid var(--card2)}
+.roi-result-item:last-child{border-bottom:none}
+.roi-result-num{font-family:var(--font-heading);font-size:36px;font-weight:700;color:var(--accent)}
+.roi-result-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text2);font-weight:600;margin-top:4px}
+.roi-btn{width:100%;padding:14px;border:none;border-radius:var(--radius-md);background:var(--accent);color:#fff;font-family:var(--font-body);font-size:15px;font-weight:600;cursor:pointer;transition:var(--transition);box-shadow:0 2px 8px rgba(196,101,58,0.25);margin-top:8px}
+.roi-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(196,101,58,0.3)}
+/* Timeline */
+.timeline-scroll{overflow-x:auto;padding:20px 0}
+.timeline-track{display:flex;align-items:flex-start;gap:0;min-width:800px;position:relative}
+.timeline-track::before{content:'';position:absolute;top:20px;left:20px;right:20px;height:3px;background:linear-gradient(90deg,var(--green),var(--accent));border-radius:2px}
+.tl-node{display:flex;flex-direction:column;align-items:center;flex:1;position:relative;z-index:1;cursor:pointer;transition:var(--transition)}
+.tl-node:hover{transform:translateY(-2px)}
+.tl-dot{width:40px;height:40px;border-radius:50%;background:var(--green);border:4px solid var(--bg);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm)}
+.tl-dot svg{width:16px;height:16px;fill:#fff}
+.tl-date{font-size:10px;font-weight:600;color:var(--text2);margin-top:10px;text-align:center;white-space:nowrap}
+.tl-id{font-size:9px;color:var(--grey);font-family:var(--font-code);margin-top:2px}
+.tl-badge{font-size:9px;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:var(--radius-pill);margin-top:4px;font-weight:600}
+/* Maturity Model */
+.maturity-bar{display:flex;gap:0;border-radius:var(--radius-lg);overflow:hidden;margin-bottom:32px;box-shadow:var(--shadow-md)}
+.mat-stage{flex:1;padding:28px 20px;text-align:center;transition:var(--transition);position:relative}
+.mat-stage:nth-child(1){background:#f0e6e6;color:#8b6b6b}
+.mat-stage:nth-child(2){background:#f0ece6;color:#8b7d6b}
+.mat-stage:nth-child(3){background:#eaf0e6;color:#6b8b6e}
+.mat-stage:nth-child(4){background:linear-gradient(135deg,var(--accent),#e8845c);color:#fff}
+.mat-stage h4{font-size:16px;margin-bottom:6px}
+.mat-stage p{font-size:12px;opacity:0.8}
+.mat-here{display:inline-block;margin-top:8px;padding:3px 14px;background:rgba(255,255,255,0.3);border-radius:var(--radius-pill);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;animation:herePulse 2s ease-in-out infinite}
+@keyframes herePulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,0.4)}50%{box-shadow:0 0 0 8px rgba(255,255,255,0)}}
+/* Comparison Matrix */
+.compare-table{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);border-radius:var(--radius-md);overflow:hidden;box-shadow:var(--shadow-sm)}
+.compare-table thead{background:var(--text);color:#fff}
+.compare-table th{padding:14px 18px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:600;text-align:center}
+.compare-table th:first-child{text-align:left}
+.compare-table td{padding:14px 18px;border-bottom:1px solid var(--card2);font-size:13px;text-align:center;vertical-align:middle}
+.compare-table td:first-child{text-align:left;font-weight:500}
+.compare-table tbody tr:hover{background:rgba(196,101,58,0.03)}
+.cmp-yes{color:var(--green);font-weight:700}.cmp-no{color:#c0392b;font-weight:700}.cmp-mid{color:var(--orange);font-weight:600}
+.compare-table .highlight-col{background:rgba(196,101,58,0.04)}
+/* Simulator */
+.sim-wrapper{background:var(--card);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-md)}
+.sim-progress{display:flex;padding:4px;background:var(--card2);gap:4px}
+.sim-step{flex:1;height:6px;border-radius:3px;background:var(--pill);transition:var(--transition)}
+.sim-step.done{background:var(--green)}
+.sim-step.active{background:var(--accent);animation:simPulse 1.5s ease infinite}
+@keyframes simPulse{0%,100%{opacity:1}50%{opacity:0.6}}
+.sim-stages{display:flex;padding:8px 16px;gap:6px;overflow-x:auto;background:var(--card2);border-bottom:1px solid var(--pill)}
+.sim-stage-btn{padding:6px 14px;border-radius:var(--radius-pill);border:none;background:transparent;font-family:var(--font-body);font-size:12px;cursor:pointer;white-space:nowrap;transition:var(--transition);color:var(--text2)}
+.sim-stage-btn:hover{background:var(--card)}
+.sim-stage-btn.active{background:var(--accent);color:#fff;font-weight:600}
+.sim-console{background:#1a1a1a;min-height:320px;padding:24px;font-family:var(--font-code);font-size:13px;color:#d4d4d4;line-height:1.8;position:relative;overflow:auto}
+.sim-console .prompt{color:var(--accent)}.sim-console .ok{color:#5BCC5B}.sim-console .info{color:#6b9ed6}.sim-console .warn{color:#e6c454}
+.sim-controls{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;background:var(--card);border-top:1px solid var(--card2)}
+.sim-nav-btn{padding:10px 24px;border-radius:var(--radius-pill);border:1px solid var(--pill);background:var(--card);font-family:var(--font-body);font-size:13px;font-weight:500;cursor:pointer;transition:var(--transition)}
+.sim-nav-btn:hover{background:var(--card2)}
+.sim-nav-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 2px 8px rgba(196,101,58,0.25)}
+.sim-nav-btn.primary:hover{transform:translateY(-1px)}
+/* Search */
+.search-wrap{position:relative;margin-bottom:48px}
+.search-input{width:100%;padding:14px 20px 14px 48px;border:2px solid var(--pill);border-radius:var(--radius-pill);font-family:var(--font-body);font-size:15px;background:var(--card);transition:var(--transition);box-shadow:var(--shadow-sm)}
+.search-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light),var(--shadow-md)}
+.search-icon{position:absolute;left:18px;top:50%;transform:translateY(-50%);color:var(--text2)}
+.search-esc{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--grey);background:var(--card2);padding:2px 8px;border-radius:4px;font-family:var(--font-code);display:none}
+/* Footer */
+.footer{padding:32px 0;border-top:1px solid var(--card2);display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text2);margin-top:48px}
+/* Responsive */
+@media(max-width:768px){
+.hero h1{font-size:28px}
+.stats-grid{grid-template-columns:repeat(2,1fr)}
+.ba-grid,.gov-grid,.roi-grid{grid-template-columns:1fr}
+.maturity-bar{flex-direction:column}
+.nav-pill{width:100%}
+.filter-chip{width:100%;justify-content:center}
+}
+/* Scroll animations */
+.reveal{opacity:0;transform:translateY(20px);transition:opacity 0.6s ease,transform 0.6s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ===== BRAND HEADER ===== -->
+<header class="brand-header">
+<div class="container brand-inner">
+<div class="brand-logo">A</div>
+<div>
+<div class="brand-label">Accelerator</div>
+<div class="brand-author">Deployment Pipeline API</div>
+</div>
+<div class="brand-sep"></div>
+<div style="font-size:13px;color:var(--text2)">Microsoft Fabric &middot; Power BI REST API</div>
+</div>
+</header>
+
+<!-- ===== HERO ===== -->
+<div class="container">
+<section class="hero">
+<h1>Deployment Pipeline<br>API Accelerator</h1>
+<p class="hero-sub">Automate your Microsoft Fabric deployments from Dev to UAT in under 2 minutes. One notebook. Zero manual portal clicks. Full governance built in.</p>
+<div class="intro-card">
+<strong>What is this?</strong> A production-ready Fabric Notebook that orchestrates the entire Power BI deployment pipeline via REST API &mdash; authentication, pipeline setup, selective deployment, post-deployment configuration, verification, and audit logging. It replaces <strong>13+ manual portal steps</strong> with a single automated run, while enforcing governance through service principal authentication, environment isolation, and complete deployment traceability.
+</div>
+</section>
+
+<!-- ===== SEARCH BAR ===== -->
+<div class="search-wrap">
+<svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+<input type="text" class="search-input" id="searchInput" placeholder="Search documentation..." onkeyup="handleSearch(this.value)">
+<span class="search-esc" id="searchEsc">ESC</span>
+</div>
+
+<!-- ===== NAV PILLS ===== -->
+<nav class="nav-pills" id="navPills">
+<a href="#stats" class="nav-pill">&#x1F4CA; Summary</a>
+<a href="#before-after" class="nav-pill">&#x1F504; Before &amp; After</a>
+<a href="#architecture" class="nav-pill">&#x1F3D7;&#xFE0F; Architecture</a>
+<a href="#benefits" class="nav-pill">&#x2B50; Benefits</a>
+<a href="#governance" class="nav-pill">&#x1F6E1;&#xFE0F; Governance</a>
+<a href="#roi" class="nav-pill">&#x1F4B0; ROI Calculator</a>
+<a href="#timeline" class="nav-pill">&#x1F4C5; Timeline</a>
+<a href="#maturity" class="nav-pill">&#x1F4C8; Maturity</a>
+<a href="#comparison" class="nav-pill">&#x2696;&#xFE0F; Comparison</a>
+<a href="#simulator" class="nav-pill">&#x1F680; Simulator</a>
+</nav>
+
+<!-- ===== SUMMARY STATS ===== -->
+<section id="stats" class="section reveal">
+<div class="stats-grid">
+<div class="stat-card"><div class="stat-num">8</div><div class="stat-label">Automated Phases</div></div>
+<div class="stat-card"><div class="stat-num">1</div><div class="stat-label">Notebook</div></div>
+<div class="stat-card"><div class="stat-num">&lt;2m</div><div class="stat-label">Deploy Time</div></div>
+<div class="stat-card"><div class="stat-num">13</div><div class="stat-label">Deployments</div></div>
+<div class="stat-card"><div class="stat-num">0</div><div class="stat-label">Failures</div></div>
+</div>
+</section>
+
+<!-- ===== BEFORE vs AFTER ===== -->
+<section id="before-after" class="section reveal">
+<h2 class="section-title">The Transformation</h2>
+<p class="section-sub">From 45 minutes of manual portal clicks to a 2-minute automated run.</p>
+<div class="ba-grid">
+<div class="ba-col ba-before">
+<h3><span>&#x274C;</span> Before: Manual Deployment</h3>
+<div class="ba-item"><div class="ba-icon">1</div>Log in to Power BI portal</div>
+<div class="ba-item"><div class="ba-icon">2</div>Navigate to deployment pipeline</div>
+<div class="ba-item"><div class="ba-icon">3</div>Check workspace assignments</div>
+<div class="ba-item"><div class="ba-icon">4</div>Select items to deploy</div>
+<div class="ba-item"><div class="ba-icon">5</div>Configure deployment options</div>
+<div class="ba-item"><div class="ba-icon">6</div>Click Deploy and wait</div>
+<div class="ba-item"><div class="ba-icon">7</div>Check deployment status</div>
+<div class="ba-item"><div class="ba-icon">8</div>Navigate to UAT workspace</div>
+<div class="ba-item"><div class="ba-icon">9</div>Take over semantic model</div>
+<div class="ba-item"><div class="ba-icon">10</div>Open gateway settings</div>
+<div class="ba-item"><div class="ba-icon">11</div>Map cloud connection</div>
+<div class="ba-item"><div class="ba-icon">12</div>Apply and refresh</div>
+<div class="ba-item"><div class="ba-icon">13</div>Verify deployment manually</div>
+<div class="ba-summary">~45 minutes &middot; Error-prone &middot; No audit trail</div>
+</div>
+<div class="ba-col ba-after">
+<h3><span>&#x2705;</span> After: Automated Pipeline</h3>
+<div class="ba-item"><div class="ba-icon">&#x2713;</div>Authenticate via Service Principal</div>
+<div class="ba-item"><div class="ba-icon">&#x2713;</div>Auto-detect or create pipeline</div>
+<div class="ba-item"><div class="ba-icon">&#x2713;</div>Validate all items exist in Dev</div>
+<div class="ba-item"><div class="ba-icon">&#x2713;</div>Smart deploy (report-only or full)</div>
+<div class="ba-item"><div class="ba-icon">&#x2713;</div>Poll until completion</div>
+<div class="ba-item"><div class="ba-icon">&#x2713;</div>Auto-configure UAT connection</div>
+<div class="ba-item"><div class="ba-icon">&#x2713;</div>Verify items in target workspace</div>
+<div class="ba-item"><div class="ba-icon">&#x2713;</div>Generate full deployment log</div>
+<div class="ba-summary">~2 minutes &middot; Consistent &middot; Fully audited</div>
+</div>
+</div>
+</section>
+
+<!-- ===== ARCHITECTURE FLOW ===== -->
+<section id="architecture" class="section reveal">
+<h2 class="section-title">Architecture: 8-Phase Pipeline</h2>
+<p class="section-sub">Click any phase to explore its implementation details.</p>
+<div class="flow-wrapper">
+<div class="flow-track">
+<div class="flow-node" onclick="showPhase(0)"><div class="flow-circle">&#x1F511;</div><div class="flow-label">Config</div></div>
+<div class="flow-connector"></div>
+<div class="flow-node" onclick="showPhase(1)"><div class="flow-circle">&#x1F510;</div><div class="flow-label">Auth</div></div>
+<div class="flow-connector"></div>
+<div class="flow-node" onclick="showPhase(2)"><div class="flow-circle">&#x2699;&#xFE0F;</div><div class="flow-label">Pipeline Setup</div></div>
+<div class="flow-connector"></div>
+<div class="flow-node" onclick="showPhase(3)"><div class="flow-circle">&#x1F50D;</div><div class="flow-label">Pre-Check</div></div>
+<div class="flow-connector"></div>
+<div class="flow-node" onclick="showPhase(4)"><div class="flow-circle">&#x1F680;</div><div class="flow-label">Deploy</div></div>
+<div class="flow-connector"></div>
+<div class="flow-node" onclick="showPhase(5)"><div class="flow-circle">&#x23F3;</div><div class="flow-label">Poll</div></div>
+<div class="flow-connector"></div>
+<div class="flow-node" onclick="showPhase(6)"><div class="flow-circle">&#x1F527;</div><div class="flow-label">Auto-Config</div></div>
+<div class="flow-connector"></div>
+<div class="flow-node" onclick="showPhase(7)"><div class="flow-circle">&#x2705;</div><div class="flow-label">Verify &amp; Log</div></div>
+</div>
+</div>
+<div id="phaseDetail" class="flow-detail"></div>
+</section>
+
+<!-- ===== BENEFITS ===== -->
+<section id="benefits" class="section reveal">
+<h2 class="section-title">Value &amp; Benefits</h2>
+<p class="section-sub">Categorised by impact level across automation, governance, and operational efficiency.</p>
+<div class="filter-bar">
+<button class="filter-chip active" onclick="filterBenefits('all')">Show All <span class="filter-count">11</span></button>
+<button class="filter-chip" onclick="filterBenefits('high')"><span class="badge badge-high">HIGH</span> <span class="filter-count">4</span></button>
+<button class="filter-chip" onclick="filterBenefits('mid')"><span class="badge badge-mid">MID</span> <span class="filter-count">4</span></button>
+<button class="filter-chip" onclick="filterBenefits('low')"><span class="badge badge-low">LOW</span> <span class="filter-count">3</span></button>
+</div>
+<table class="benefits-table">
+<thead><tr><th>Benefit</th><th>Category</th><th>Impact</th><th>Description</th></tr></thead>
+<tbody id="benefitsBody">
+<tr data-level="high"><td><strong>Zero-Touch Deployment</strong></td><td>Automation</td><td><span class="badge badge-high">HIGH</span></td><td>End-to-end deployment from Dev to UAT with no manual portal interaction required.</td></tr>
+<tr data-level="high"><td><strong>Full Audit Trail</strong></td><td>Governance</td><td><span class="badge badge-high">HIGH</span></td><td>Every deployment logged with operation ID, timestamps, item details, and status &mdash; complete traceability.</td></tr>
+<tr data-level="high"><td><strong>Environment Isolation</strong></td><td>Governance</td><td><span class="badge badge-high">HIGH</span></td><td>Strict Dev/UAT/Prod separation via pipeline stages. No cross-environment contamination.</td></tr>
+<tr data-level="high"><td><strong>Automated Verification</strong></td><td>Quality</td><td><span class="badge badge-high">HIGH</span></td><td>Pre-deployment validation confirms all items exist before deployment begins. Post-deployment verification confirms success.</td></tr>
+<tr data-level="mid"><td><strong>Smart Deployment Mode</strong></td><td>Automation</td><td><span class="badge badge-mid">MID</span></td><td>Automatically detects if UAT has existing items &mdash; deploys report-only to preserve connections, or full deploy if empty.</td></tr>
+<tr data-level="mid"><td><strong>Service Principal Auth</strong></td><td>Security</td><td><span class="badge badge-mid">MID</span></td><td>No personal credentials used. Service principal with scoped permissions ensures secure, auditable access.</td></tr>
+<tr data-level="mid"><td><strong>Gateway Auto-Binding</strong></td><td>Automation</td><td><span class="badge badge-mid">MID</span></td><td>Post-deployment auto-configures cloud connection binding &mdash; takeover + gateway assignment in one step.</td></tr>
+<tr data-level="mid"><td><strong>Deployment Notes</strong></td><td>Governance</td><td><span class="badge badge-mid">MID</span></td><td>Every deployment is tagged with mode, timestamp, and context note for audit purposes.</td></tr>
+<tr data-level="low"><td><strong>Configurable Item List</strong></td><td>Flexibility</td><td><span class="badge badge-low">LOW</span></td><td>Add or remove datasets and reports from the deployment manifest without code changes.</td></tr>
+<tr data-level="low"><td><strong>Pipeline Auto-Creation</strong></td><td>Automation</td><td><span class="badge badge-low">LOW</span></td><td>Automatically creates the deployment pipeline if it does not yet exist in the Fabric workspace.</td></tr>
+<tr data-level="low"><td><strong>Stage Assignment Checks</strong></td><td>Resilience</td><td><span class="badge badge-low">LOW</span></td><td>Validates and assigns workspaces to pipeline stages if not already configured.</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ===== GOVERNANCE RADAR ===== -->
+<section id="governance" class="section reveal">
+<h2 class="section-title">Governance Scorecard</h2>
+<p class="section-sub">Six governance pillars scored by the accelerator's built-in capabilities.</p>
+<div class="gov-grid">
+<div class="radar-canvas-wrap"><canvas id="radarCanvas" width="380" height="380"></canvas></div>
+<div class="gov-pillars" id="govPillars">
+<div class="gov-pillar" onclick="togglePillar(this)"><h4>Audit Trail <span class="gov-score badge badge-high">9/10</span></h4><p>Every deployment generates a structured log with operation ID, timestamps, item-level status, error details, and deployment notes. Supports DataFrame export for downstream analytics.</p></div>
+<div class="gov-pillar" onclick="togglePillar(this)"><h4>Access Control <span class="gov-score badge badge-high">9/10</span></h4><p>Service principal authentication eliminates personal credential usage. Scoped permissions via Entra ID ensure least-privilege access across workspaces.</p></div>
+<div class="gov-pillar" onclick="togglePillar(this)"><h4>Environment Isolation <span class="gov-score badge badge-high">9/10</span></h4><p>Strict Dev &rarr; UAT &rarr; Production stage separation enforced through pipeline stages. Workspace assignments are validated before every deployment.</p></div>
+<div class="gov-pillar" onclick="togglePillar(this)"><h4>Change Traceability <span class="gov-score badge badge-high">8/10</span></h4><p>Each deployment carries a unique operation ID, source/target item mapping, execution timestamps, and deployment notes. Full chain of custody for every change.</p></div>
+<div class="gov-pillar" onclick="togglePillar(this)"><h4>Reproducibility <span class="gov-score badge badge-mid">7/10</span></h4><p>Configuration-driven notebook &mdash; all deployment parameters are defined in a single cell. Identical results on every run with no environmental drift.</p></div>
+<div class="gov-pillar" onclick="togglePillar(this)"><h4>Approval Gates <span class="gov-score badge badge-mid">6/10</span></h4><p>First-time deployments require a one-time manual cloud connection mapping in the portal. Subsequent deployments are fully automated. Fabric pipeline approval rules can layer additional controls.</p></div>
+</div>
+</div>
+</section>
+
+<!-- ===== ROI CALCULATOR ===== -->
+<section id="roi" class="section reveal">
+<h2 class="section-title">ROI Calculator</h2>
+<p class="section-sub">Estimate your savings based on your deployment frequency and team costs.</p>
+<div class="roi-grid">
+<div class="roi-inputs">
+<div class="roi-field"><label>Deployments per week</label><input type="number" id="roiDeploys" value="3" min="1"></div>
+<div class="roi-field"><label>Minutes per manual deployment</label><input type="number" id="roiMinutes" value="45" min="5"></div>
+<div class="roi-field"><label>Team members involved</label><input type="number" id="roiTeam" value="2" min="1"></div>
+<div class="roi-field"><label>Average hourly cost (USD)</label><input type="number" id="roiCost" value="75" min="10"></div>
+<button class="roi-btn" onclick="calculateROI()">Calculate Savings</button>
+</div>
+<div class="roi-results">
+<div class="roi-result-item"><div class="roi-result-num" id="roiHours">0</div><div class="roi-result-label">Hours Saved / Month</div></div>
+<div class="roi-result-item"><div class="roi-result-num" id="roiDollars">$0</div><div class="roi-result-label">Cost Saved / Month</div></div>
+<div class="roi-result-item"><div class="roi-result-num" id="roiAnnual">$0</div><div class="roi-result-label">Annual Savings</div></div>
+<div class="roi-result-item"><div class="roi-result-num" id="roiError">95%</div><div class="roi-result-label">Error Reduction</div></div>
+</div>
+</div>
+</section>
+
+<!-- ===== DEPLOYMENT TIMELINE ===== -->
+<section id="timeline" class="section reveal">
+<h2 class="section-title">Deployment Timeline</h2>
+<p class="section-sub">13 consecutive successful deployments &mdash; zero failures, complete reliability.</p>
+<div class="timeline-scroll">
+<div class="timeline-track" id="timelineTrack">
+</div>
+</div>
+</section>
+
+<!-- ===== MATURITY MODEL ===== -->
+<section id="maturity" class="section reveal">
+<h2 class="section-title">Deployment Maturity Model</h2>
+<p class="section-sub">Where does your organisation sit on the deployment maturity curve?</p>
+<div class="maturity-bar">
+<div class="mat-stage"><h4>Manual</h4><p>Portal clicks, no automation, no audit trail</p></div>
+<div class="mat-stage"><h4>Scripted</h4><p>Basic PowerShell/CLI scripts, partial automation</p></div>
+<div class="mat-stage"><h4>Automated</h4><p>CI/CD pipelines, but not Fabric-native</p></div>
+<div class="mat-stage"><h4>Accelerated</h4><p>Fabric-native, governance built-in, zero-touch</p><div class="mat-here">You Are Here</div></div>
+</div>
+</section>
+
+<!-- ===== COMPARISON MATRIX ===== -->
+<section id="comparison" class="section reveal">
+<h2 class="section-title">How It Compares</h2>
+<p class="section-sub">This accelerator vs common deployment approaches.</p>
+<table class="compare-table">
+<thead><tr><th>Capability</th><th>Manual (Portal)</th><th>Azure DevOps</th><th>GitHub Actions</th><th class="highlight-col">This Accelerator</th></tr></thead>
+<tbody>
+<tr><td>Setup Time</td><td class="cmp-no">None (ad-hoc)</td><td class="cmp-mid">Hours</td><td class="cmp-mid">Hours</td><td class="highlight-col cmp-yes">Minutes</td></tr>
+<tr><td>Deployment Time</td><td class="cmp-no">~45 min</td><td class="cmp-mid">~5 min</td><td class="cmp-mid">~5 min</td><td class="highlight-col cmp-yes">&lt;2 min</td></tr>
+<tr><td>Fabric-Native</td><td class="cmp-yes">&#x2713;</td><td class="cmp-no">&#x2717;</td><td class="cmp-no">&#x2717;</td><td class="highlight-col cmp-yes">&#x2713;</td></tr>
+<tr><td>Governance Built-In</td><td class="cmp-no">&#x2717;</td><td class="cmp-mid">Partial</td><td class="cmp-mid">Partial</td><td class="highlight-col cmp-yes">&#x2713;</td></tr>
+<tr><td>Audit Trail</td><td class="cmp-no">&#x2717;</td><td class="cmp-yes">&#x2713;</td><td class="cmp-yes">&#x2713;</td><td class="highlight-col cmp-yes">&#x2713;</td></tr>
+<tr><td>Smart Deploy Logic</td><td class="cmp-no">&#x2717;</td><td class="cmp-no">&#x2717;</td><td class="cmp-no">&#x2717;</td><td class="highlight-col cmp-yes">&#x2713;</td></tr>
+<tr><td>Auto-Configuration</td><td class="cmp-no">&#x2717;</td><td class="cmp-mid">Custom</td><td class="cmp-mid">Custom</td><td class="highlight-col cmp-yes">&#x2713;</td></tr>
+<tr><td>Learning Curve</td><td class="cmp-yes">Low</td><td class="cmp-no">High</td><td class="cmp-no">High</td><td class="highlight-col cmp-yes">Low</td></tr>
+<tr><td>Pre-Deploy Validation</td><td class="cmp-no">&#x2717;</td><td class="cmp-mid">Custom</td><td class="cmp-mid">Custom</td><td class="highlight-col cmp-yes">&#x2713;</td></tr>
+<tr><td>Cost</td><td class="cmp-yes">Free</td><td class="cmp-mid">License</td><td class="cmp-mid">Free/Paid</td><td class="highlight-col cmp-yes">Free</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ===== LIVE DEPLOYMENT SIMULATOR ===== -->
+<section id="simulator" class="section reveal">
+<h2 class="section-title">Live Deployment Simulator</h2>
+<p class="section-sub">Step through the 8 phases and see what happens at each stage.</p>
+<div class="sim-wrapper">
+<div class="sim-progress" id="simProgress"></div>
+<div class="sim-stages" id="simStages"></div>
+<div class="sim-console" id="simConsole"></div>
+<div class="sim-controls">
+<button class="sim-nav-btn" id="simPrev" onclick="simNav(-1)">&#x2190; Previous</button>
+<span id="simLabel" style="font-size:13px;color:var(--text2)">Phase 1 of 8</span>
+<button class="sim-nav-btn primary" id="simNext" onclick="simNav(1)">Next Phase &#x2192;</button>
+</div>
+</div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+<div>Built with Microsoft Fabric &middot; Powered by Power BI REST API</div>
+<div>Deployment Pipeline API Accelerator &copy; 2026</div>
+</footer>
+
+</div><!-- /.container -->
+
+<script>
+// ===== PHASE DETAIL DATA =====
+const phases = [
+{title:'Phase 1: Configuration',desc:'All deployment parameters are defined in a single configuration cell. Update workspace IDs, pipeline name, and item lists &mdash; all other cells run without modification.',code:'<span class="cm"># Configuration cell — update only this for different deployments</span>\nTENANT_ID     = <span class="str">"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"</span>\nCLIENT_ID     = <span class="str">"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"</span>\nCLIENT_SECRET = <span class="str">"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"</span>\n\nDEV_WORKSPACE_ID = <span class="str">"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"</span>\nUAT_WORKSPACE_ID = <span class="str">"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"</span>\n\nPIPELINE_NAME = <span class="str">"AnalyticsBI_DevToUAT"</span>\n\nITEMS_TO_DEPLOY = {\n    <span class="str">"datasets"</span>: [{<span class="str">"sourceId"</span>: <span class="str">"xxxxxxxx-..."</span>}],\n    <span class="str">"reports"</span>:  [{<span class="str">"sourceId"</span>: <span class="str">"xxxxxxxx-..."</span>}]\n}'},
+{title:'Phase 2: Authentication',desc:'Acquires an OAuth2 token using client credentials flow via the Microsoft Identity Platform. Service principal &mdash; no personal credentials.',code:'body = {\n    <span class="str">\'client_id\'</span>: CLIENT_ID,\n    <span class="str">\'scope\'</span>: <span class="str">f\'{RESOURCE}/.default\'</span>,\n    <span class="str">\'client_secret\'</span>: CLIENT_SECRET,\n    <span class="str">\'grant_type\'</span>: <span class="str">\'client_credentials\'</span>\n}\nresponse = requests.<span class="fn">post</span>(AUTHORITY, data=body)\naccess_token = response.<span class="fn">json</span>()[<span class="str">\'access_token\'</span>]'},
+{title:'Phase 3: Pipeline Setup',desc:'Finds the existing deployment pipeline by name, or creates it if it doesn\'t exist. Validates workspace assignments for Dev (Stage 0) and UAT (Stage 1).',code:'<span class="cm"># Find or create pipeline</span>\nresponse = requests.<span class="fn">get</span>(<span class="str">f"{BASE_URL}/pipelines"</span>, headers=api_headers)\n<span class="kw">for</span> p <span class="kw">in</span> response.json()[<span class="str">\'value\'</span>]:\n    <span class="kw">if</span> p[<span class="str">\'displayName\'</span>] == PIPELINE_NAME:\n        pipeline_id = p[<span class="str">\'id\'</span>]\n\n<span class="cm"># Assign workspaces to stages if needed</span>\nworkspace_map = {<span class="str">0</span>: DEV_WORKSPACE_ID, <span class="str">1</span>: UAT_WORKSPACE_ID}'},
+{title:'Phase 4: Pre-Deployment Check',desc:'Lists all items in the Dev stage and validates that every item in the deployment manifest actually exists. Prevents deploying non-existent items.',code:'<span class="cm"># Validate deployment manifest</span>\nartifacts_url = <span class="str">f"{BASE_URL}/pipelines/{pipeline_id}/stages/0/artifacts"</span>\ndev_data = requests.<span class="fn">get</span>(artifacts_url, headers=api_headers).<span class="fn">json</span>()\n\n<span class="kw">for</span> item_type, items <span class="kw">in</span> ITEMS_TO_DEPLOY.items():\n    <span class="kw">for</span> item <span class="kw">in</span> items:\n        <span class="kw">if</span> item[<span class="str">\'sourceId\'</span>] <span class="kw">not in</span> all_stage_ids:\n            <span class="kw">raise</span> Exception(<span class="str">"Item not found in Dev stage"</span>)'},
+{title:'Phase 5: Deploy',desc:'Smart deployment: if UAT already has the semantic model, deploys report-only to preserve existing connections. If UAT is empty, does a full dataset + report deployment.',code:'<span class="cm"># Smart deploy mode detection</span>\n<span class="kw">if</span> uat_has_datasets <span class="kw">and</span> uat_has_reports:\n    deploy_mode = <span class="str">"REPORT ONLY"</span>  <span class="cm"># Preserve connection</span>\n<span class="kw">else</span>:\n    deploy_mode = <span class="str">"FULL"</span>          <span class="cm"># Deploy everything</span>\n\nresponse = requests.<span class="fn">post</span>(\n    <span class="str">f"{BASE_URL}/pipelines/{pipeline_id}/deploy"</span>,\n    headers=api_headers, json=deploy_body)'},
+{title:'Phase 6: Poll for Completion',desc:'Polls the deployment operation status every 5 seconds until it succeeds, fails, or times out at 300 seconds. Reports step-level details on completion.',code:'<span class="kw">while</span> elapsed < max_wait:\n    operation = requests.<span class="fn">get</span>(operation_url, headers=api_headers).<span class="fn">json</span>()\n    status = operation[<span class="str">\'status\'</span>]\n    <span class="kw">if</span> status == <span class="str">\'Succeeded\'</span>:\n        <span class="fn">print</span>(<span class="str">"DEPLOYMENT SUCCEEDED"</span>)\n        <span class="kw">break</span>\n    time.<span class="fn">sleep</span>(<span class="str">5</span>)'},
+{title:'Phase 7: Auto-Configuration',desc:'On first-time deployments: discovers the UAT dataset, takes over the semantic model via service principal, and binds to the cloud connection (gateway).',code:'<span class="cm"># Service principal takes over semantic model</span>\ntakeover_url = <span class="str">f"{BASE_URL}/groups/{UAT_WS}/datasets/{id}/Default.TakeOver"</span>\nrequests.<span class="fn">post</span>(takeover_url, headers=api_headers)\n\n<span class="cm"># Bind to cloud connection</span>\nbind_body = {\n    <span class="str">"gatewayObjectId"</span>: UAT_GATEWAY_ID,\n    <span class="str">"datasourceObjectIds"</span>: [UAT_DATASOURCE_ID]\n}\nrequests.<span class="fn">post</span>(bind_url, headers=api_headers, json=bind_body)'},
+{title:'Phase 8: Verify & Log',desc:'Confirms all items exist in the UAT stage post-deployment. Retrieves full deployment history and generates a structured DataFrame log for audit and analytics.',code:'<span class="cm"># Verify items in UAT</span>\nuat_artifacts = requests.<span class="fn">get</span>(uat_url, headers=api_headers).<span class="fn">json</span>()\n\n<span class="cm"># Generate deployment log</span>\noperations = requests.<span class="fn">get</span>(ops_url, headers=api_headers).<span class="fn">json</span>()\ndf_log = pd.<span class="fn">DataFrame</span>(log_data)\n<span class="fn">display</span>(df_log)  <span class="cm"># Full audit trail</span>'}
+];
+
+function showPhase(idx){
+  document.querySelectorAll('.flow-node').forEach((n,i)=>{n.classList.toggle('active',i===idx)});
+  const d=document.getElementById('phaseDetail');
+  const p=phases[idx];
+  d.innerHTML='<h4>'+p.title+'</h4><p>'+p.desc+'</p><div class="code-peek">'+p.code+'</div>';
+  d.className='flow-detail show';
+  d.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ===== BENEFITS FILTER =====
+function filterBenefits(level){
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.querySelectorAll('#benefitsBody tr').forEach(r=>{
+    r.style.display=(level==='all'||r.dataset.level===level)?'':'none';
+  });
+}
+
+// ===== GOVERNANCE RADAR =====
+function togglePillar(el){el.classList.toggle('active')}
+
+function drawRadar(){
+  const canvas=document.getElementById('radarCanvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const cx=190,cy=190,r=140;
+  const scores=[9,9,9,8,7,6];
+  const labels=['Audit\nTrail','Access\nControl','Env\nIsolation','Change\nTrace','Repro-\nducibility','Approval\nGates'];
+  const n=scores.length;
+  ctx.clearRect(0,0,380,380);
+  // Grid
+  for(let ring=1;ring<=5;ring++){
+    ctx.beginPath();
+    const rr=r*ring/5;
+    for(let i=0;i<=n;i++){
+      const a=Math.PI*2*i/n-Math.PI/2;
+      const x=cx+rr*Math.cos(a),y=cy+rr*Math.sin(a);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle='rgba(45,43,40,0.08)';ctx.lineWidth=1;ctx.stroke();
+  }
+  // Axes + labels
+  ctx.font='500 11px Inter,sans-serif';ctx.fillStyle='#6B6560';ctx.textAlign='center';
+  for(let i=0;i<n;i++){
+    const a=Math.PI*2*i/n-Math.PI/2;
+    ctx.beginPath();ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+r*Math.cos(a),cy+r*Math.sin(a));
+    ctx.strokeStyle='rgba(45,43,40,0.06)';ctx.stroke();
+    const lx=cx+(r+28)*Math.cos(a),ly=cy+(r+28)*Math.sin(a);
+    const lines=labels[i].split('\n');
+    lines.forEach((line,li)=>{ctx.fillText(line,lx,ly+li*13)});
+  }
+  // Data polygon
+  ctx.beginPath();
+  for(let i=0;i<=n;i++){
+    const idx=i%n;
+    const a=Math.PI*2*idx/n-Math.PI/2;
+    const sr=r*scores[idx]/10;
+    const x=cx+sr*Math.cos(a),y=cy+sr*Math.sin(a);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.fillStyle='rgba(196,101,58,0.12)';ctx.fill();
+  ctx.strokeStyle='#C4653A';ctx.lineWidth=2.5;ctx.stroke();
+  // Dots
+  for(let i=0;i<n;i++){
+    const a=Math.PI*2*i/n-Math.PI/2;
+    const sr=r*scores[i]/10;
+    ctx.beginPath();ctx.arc(cx+sr*Math.cos(a),cy+sr*Math.sin(a),5,0,Math.PI*2);
+    ctx.fillStyle='#C4653A';ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+  }
+}
+
+// ===== ROI CALCULATOR =====
+function calculateROI(){
+  const deploys=+document.getElementById('roiDeploys').value;
+  const mins=+document.getElementById('roiMinutes').value;
+  const team=+document.getElementById('roiTeam').value;
+  const cost=+document.getElementById('roiCost').value;
+  const autoMins=2;
+  const savedMinsPerDeploy=(mins-autoMins)*team;
+  const monthlyDeploys=deploys*4.33;
+  const hoursSaved=(savedMinsPerDeploy*monthlyDeploys)/60;
+  const costSaved=hoursSaved*cost;
+  const annual=costSaved*12;
+  animateValue('roiHours',0,Math.round(hoursSaved),800,'');
+  animateValue('roiDollars',0,Math.round(costSaved),800,'$');
+  animateValue('roiAnnual',0,Math.round(annual),800,'$');
+  document.getElementById('roiError').textContent='95%';
+}
+function animateValue(id,start,end,dur,prefix){
+  const el=document.getElementById(id);
+  const range=end-start;
+  const startTime=performance.now();
+  function step(now){
+    const progress=Math.min((now-startTime)/dur,1);
+    const eased=1-Math.pow(1-progress,3);
+    const val=Math.round(start+range*eased);
+    el.textContent=prefix+(val>=1000?val.toLocaleString():val);
+    if(progress<1)requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// ===== TIMELINE =====
+const deployments=[
+{date:'21 Feb 15:44',id:'a1e8d9e9'},
+{date:'21 Feb 17:20',id:'1736d17b'},
+{date:'21 Feb 17:36',id:'ae3bb204'},
+{date:'21 Feb 17:44',id:'53b9a2de'},
+{date:'21 Feb 17:50',id:'a8ba0540'},
+{date:'21 Feb 18:23',id:'f8ea60d5'},
+{date:'22 Feb 08:51',id:'59c6dfce'},
+{date:'22 Feb 08:59',id:'3ae57943'},
+{date:'22 Feb 09:09',id:'ae9eea1e'},
+{date:'22 Feb 15:20',id:'b5086dda'},
+{date:'22 Feb 15:22',id:'c242bb3e'},
+{date:'22 Feb 15:29',id:'bf099601'},
+{date:'22 Feb 15:54',id:'e9d807ee'}
+];
+
+function buildTimeline(){
+  const t=document.getElementById('timelineTrack');
+  t.innerHTML=deployments.map((d,i)=>`
+    <div class="tl-node" style="animation-delay:${i*0.1}s">
+      <div class="tl-dot"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg></div>
+      <div class="tl-date">${d.date}</div>
+      <div class="tl-id">${d.id}...</div>
+      <div class="tl-badge">Succeeded</div>
+    </div>
+  `).join('');
+}
+
+// ===== SIMULATOR =====
+const simData=[
+{name:'Configuration',output:[
+'<span class="prompt">DEPLOYMENT NOTEBOOK: Dev to UAT</span>',
+'======================================================================',
+'<span class="info">  Execution Time   : 22/02/2026 15:54:04</span>',
+'  Pipeline         : AnalyticsBI_DevToUAT',
+'  Source (Dev)      : xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+'  Target (UAT)      : xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+'  Datasets          : 1',
+'  Reports           : 1',
+'  Allow Create      : True',
+'  Allow Overwrite   : True',
+'======================================================================']},
+{name:'Authentication',output:[
+'<span class="prompt">PHASE 1: Authentication</span>',
+'----------------------------------------------------------------------',
+'  Requesting token from Microsoft Identity Platform...',
+'  Scope: https://analysis.windows.net/powerbi/api/.default',
+'  Grant type: client_credentials',
+'<span class="ok">  Token acquired successfully</span>']},
+{name:'Pipeline Setup',output:[
+'<span class="prompt">PHASE 2: Pipeline Setup</span>',
+'----------------------------------------------------------------------',
+'  Searching for pipeline: AnalyticsBI_DevToUAT...',
+'<span class="ok">  Found existing pipeline: AnalyticsBI_DevToUAT</span>',
+'  Pipeline ID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+'  Stage 0 (Development): Assigned',
+'  Stage 1 (Test/UAT): Assigned',
+'  Stage 2 (Production): Not assigned',
+'<span class="ok">  Pipeline ready</span>']},
+{name:'Pre-Check',output:[
+'<span class="prompt">PHASE 3: Pre-Deployment Check</span>',
+'----------------------------------------------------------------------',
+'  DATASETS in Dev stage:',
+'    06.Lakehouse View to PBI Version 04 <span class="warn">&lt;-- DEPLOYING</span>',
+'  REPORTS in Dev stage:',
+'    06.Lakehouse View to PBI Version 04 <span class="warn">&lt;-- DEPLOYING</span>',
+'',
+'  Deployment manifest validation:',
+'<span class="ok">  VALID   datasets: xxxxxxxx-xxxx-...</span>',
+'<span class="ok">  VALID   reports:  xxxxxxxx-xxxx-...</span>',
+'<span class="ok">  All items validated — ready to deploy</span>']},
+{name:'Deploy',output:[
+'<span class="prompt">PHASE 4: Deploying Dev to UAT</span>',
+'----------------------------------------------------------------------',
+'<span class="info">  Mode: REPORT ONLY (UAT has semantic model — preserving connection)</span>',
+'  Source Stage   : 0 (Development)',
+'  Target Stage   : 1 (Test/UAT)',
+'  Datasets       : 0',
+'  Reports        : 1',
+'  Allow Create   : True',
+'  Allow Overwrite: True',
+'',
+'<span class="ok">  Deployment accepted</span>',
+'  Operation ID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx']},
+{name:'Poll',output:[
+'<span class="prompt">PHASE 5: Waiting for deployment to complete...</span>',
+'----------------------------------------------------------------------',
+'  Polling... Status: NotStarted (0s elapsed)',
+'  Polling... Status: Executing (5s elapsed)',
+'',
+'<span class="ok">  DEPLOYMENT SUCCEEDED</span>',
+'  Started : 2026-02-22T15:54:34.773Z',
+'  Ended   : 2026-02-22T15:54:35.9Z',
+'',
+'  Deployment Steps:',
+'<span class="ok">    06.Lakehouse View to PBI Version 04 (ReportDeployment) — Succeeded</span>']},
+{name:'Auto-Config',output:[
+'<span class="prompt">PHASE 6: Post-Deployment Auto-Configuration</span>',
+'----------------------------------------------------------------------',
+'<span class="info">  SKIPPED — report-only deployment, connection already configured</span>',
+'<span class="ok">  No manual steps required</span>',
+'',
+'  Note: On first deployment, this phase automatically:',
+'    1. Discovers UAT dataset ID from pipeline artifacts',
+'    2. Service principal takes over the semantic model',
+'    3. Binds to the cloud connection (gateway)',
+'    4. Maps the data source']},
+{name:'Verify & Log',output:[
+'<span class="prompt">PHASE 7: Post-Deployment Verification</span>',
+'----------------------------------------------------------------------',
+'  DATASETS now in UAT:',
+'<span class="ok">    06.Lakehouse View to PBI Version 04 — Verified</span>',
+'  REPORTS now in UAT:',
+'<span class="ok">    06.Lakehouse View to PBI Version 04 — Verified</span>',
+'',
+'======================================================================',
+'<span class="ok">DEPLOYMENT COMPLETE</span>',
+'======================================================================',
+'',
+'<span class="prompt">PHASE 8: Deployment Log</span>',
+'----------------------------------------------------------------------',
+'  13 deployment(s) found',
+'  13 total steps recorded',
+'<span class="ok">  Full audit trail generated — DataFrame exported</span>']}
+];
+
+let simIdx=0;
+function buildSim(){
+  const prog=document.getElementById('simProgress');
+  const stages=document.getElementById('simStages');
+  prog.innerHTML=simData.map((_,i)=>'<div class="sim-step"></div>').join('');
+  stages.innerHTML=simData.map((s,i)=>`<button class="sim-stage-btn" onclick="simGo(${i})">${s.name}</button>`).join('');
+  simGo(0);
+}
+function simGo(idx){
+  simIdx=idx;
+  document.querySelectorAll('.sim-step').forEach((s,i)=>{s.className='sim-step'+(i<idx?' done':i===idx?' active':'')});
+  document.querySelectorAll('.sim-stage-btn').forEach((b,i)=>{b.classList.toggle('active',i===idx)});
+  const con=document.getElementById('simConsole');
+  con.innerHTML='';
+  simData[idx].output.forEach((line,i)=>{
+    setTimeout(()=>{con.innerHTML+=line+'\n';con.scrollTop=con.scrollHeight},i*80);
+  });
+  document.getElementById('simLabel').textContent=`Phase ${idx+1} of ${simData.length}`;
+  document.getElementById('simPrev').style.visibility=idx===0?'hidden':'visible';
+  document.getElementById('simNext').textContent=idx===simData.length-1?'Restart ↺':'Next Phase →';
+}
+function simNav(dir){
+  if(dir===1&&simIdx===simData.length-1){simGo(0);return}
+  simGo(Math.max(0,Math.min(simData.length-1,simIdx+dir)));
+}
+
+// ===== SEARCH =====
+function handleSearch(q){
+  const esc=document.getElementById('searchEsc');
+  esc.style.display=q?'block':'none';
+  const sections=document.querySelectorAll('.section');
+  if(!q){sections.forEach(s=>s.style.display='');return}
+  const lower=q.toLowerCase();
+  sections.forEach(s=>{
+    s.style.display=s.textContent.toLowerCase().includes(lower)?'':'none';
+  });
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    document.getElementById('searchInput').value='';
+    handleSearch('');
+  }
+});
+
+// ===== SCROLL REVEAL =====
+const observer=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')});
+},{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+
+// ===== INIT =====
+window.addEventListener('DOMContentLoaded',()=>{
+  drawRadar();
+  buildTimeline();
+  buildSim();
+  calculateROI();
+});
+</script>
+
+</body>
+</html>
