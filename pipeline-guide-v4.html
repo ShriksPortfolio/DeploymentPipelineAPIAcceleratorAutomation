@@ -1,0 +1,2337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pipeline API Workflow — Automated CI/CD for Microsoft Fabric</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=SF+Pro+Display:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ================================================================
+   RESET & CUSTOM PROPERTIES
+   ================================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #FAF8F5;
+  --bg-deep: #F1EDE8;
+  --card: #FFFFFF;
+  --text: #2D2B28;
+  --text-secondary: #6B6560;
+  --text-tertiary: #9B9590;
+  --accent: #C4653A;
+  --accent-soft: rgba(196,101,58,0.08);
+  --accent-glow: rgba(196,101,58,0.12);
+  --green: #5B8C5A;
+  --green-bg: #EEF4ED;
+  --green-soft: rgba(91,140,90,0.08);
+  --orange: #C4883A;
+  --orange-bg: #FDF3E7;
+  --red: #C44A3A;
+  --red-bg: #FDF0ED;
+  --border: #E8E5E1;
+  --border-light: #F0ECE8;
+  --dark: #2D2B28;
+  --glass: rgba(250,248,245,0.72);
+  --glass-border: rgba(232,229,225,0.5);
+  --shadow-subtle: 0 1px 2px rgba(45,43,40,0.03);
+  --shadow-sm: 0 2px 8px rgba(45,43,40,0.04);
+  --shadow-md: 0 8px 24px rgba(45,43,40,0.06);
+  --shadow-lg: 0 16px 48px rgba(45,43,40,0.08);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-pill: 980px;
+  --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ================================================================
+   FROSTED GLASS NAV
+   ================================================================ */
+.top-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: var(--glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--glass-border);
+  transition: all 0.4s var(--ease);
+}
+.top-nav.scrolled { box-shadow: 0 1px 12px rgba(45,43,40,0.06); }
+.nav-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 68px;
+}
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.nav-logo {
+  width: 28px; height: 28px;
+  background: var(--accent);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+}
+.nav-logo svg { width: 15px; height: 15px; }
+.nav-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.2px;
+}
+.nav-links {
+  display: flex;
+  gap: 4px;
+}
+.nav-link {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-radius: var(--radius-pill);
+  transition: all 0.25s var(--ease);
+}
+.nav-link:hover { color: var(--text); background: rgba(45,43,40,0.04); }
+.nav-link.active { color: var(--accent); background: var(--accent-soft); }
+
+/* ================================================================
+   SCROLL-BASED FADE-IN ANIMATIONS
+   ================================================================ */
+.fade-section {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
+}
+.fade-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.stagger-1 { transition-delay: 0.1s; }
+.stagger-2 { transition-delay: 0.2s; }
+.stagger-3 { transition-delay: 0.3s; }
+
+/* ================================================================
+   HERO
+   ================================================================ */
+.hero {
+  padding: 150px 40px 80px;
+  max-width: 1120px;
+  margin: 0 auto;
+  text-align: center;
+}
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px 6px 8px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-glow);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.3px;
+  margin-bottom: 28px;
+}
+.hero-eyebrow-dot {
+  width: 8px; height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: 56px;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  line-height: 1.08;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+.hero h1 span { color: var(--accent); }
+.hero-sub {
+  font-size: 19px;
+  color: var(--text-secondary);
+  max-width: 600px;
+  margin: 0 auto 40px;
+  line-height: 1.55;
+  font-weight: 400;
+  letter-spacing: -0.1px;
+}
+
+/* ================================================================
+   STATS ROW
+   ================================================================ */
+.stats-row {
+  display: flex;
+  justify-content: center;
+  gap: 48px;
+  padding: 0 40px;
+  max-width: 800px;
+  margin: 0 auto 32px;
+}
+.stat-item { text-align: center; }
+.stat-val {
+  font-family: var(--font-display);
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.stat-val.accent { color: var(--accent); }
+.stat-val.green { color: var(--green); }
+.stat-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  margin-top: 6px;
+  letter-spacing: 0.3px;
+}
+
+/* ================================================================
+   FULL-WIDTH SECTIONS
+   ================================================================ */
+.section {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 80px 40px;
+}
+.section-divider {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+.section-divider hr {
+  border: none;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Section Titles — Apple style */
+.section-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: -0.8px;
+  line-height: 1.12;
+  margin-bottom: 16px;
+}
+.section-desc {
+  font-size: 17px;
+  color: var(--text-secondary);
+  max-width: 640px;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+/* ================================================================
+   ARCHITECTURE TOPOLOGY DIAGRAM
+   ================================================================ */
+.arch-diagram {
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 48px 40px;
+  margin-top: 40px;
+  overflow-x: auto;
+}
+.arch-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  min-width: 900px;
+  padding: 20px 0;
+}
+.arch-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+.arch-icon-box {
+  width: 72px; height: 72px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  margin-bottom: 12px;
+  transition: transform 0.3s var(--ease);
+  position: relative;
+}
+.arch-node:hover .arch-icon-box { transform: scale(1.08); }
+.arch-icon-box.auth { background: linear-gradient(135deg, #EDE7F6, #D1C4E9); border: 1px solid #B39DDB; }
+.arch-icon-box.notebook { background: linear-gradient(135deg, var(--orange-bg), #FDEBD0); border: 1px solid #F5CBA7; }
+.arch-icon-box.api { background: linear-gradient(135deg, #E8EAF6, #C5CAE9); border: 1px solid #9FA8DA; }
+.arch-icon-box.dev { background: linear-gradient(135deg, var(--green-bg), #D5E8D4); border: 1px solid #A9D18E; }
+.arch-icon-box.pipeline { background: linear-gradient(135deg, var(--accent-soft), #F5D5C8); border: 1px solid var(--accent); }
+.arch-icon-box.uat { background: linear-gradient(135deg, #E3F2FD, #BBDEFB); border: 1px solid #90CAF9; }
+.arch-icon-box.gateway { background: linear-gradient(135deg, #FFF3E0, #FFE0B2); border: 1px solid #FFCC80; }
+.arch-icon-box.lakehouse { background: linear-gradient(135deg, #F3E5F5, #E1BEE7); border: 1px solid #CE93D8; }
+
+.arch-node-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.1px;
+}
+.arch-node-sub {
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+.arch-arrow {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  margin-bottom: 28px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+.arch-arrow svg { width: 32px; height: 12px; }
+.arch-arrow-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+/* ================================================================
+   API CALL FLOW
+   ================================================================ */
+.api-flow {
+  margin-top: 48px;
+}
+.api-flow-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  letter-spacing: -0.3px;
+}
+.api-timeline {
+  position: relative;
+  padding-left: 32px;
+}
+.api-timeline::before {
+  content: '';
+  position: absolute;
+  left: 11px; top: 0; bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+.api-step {
+  position: relative;
+  padding: 0 0 32px 28px;
+}
+.api-step:last-child { padding-bottom: 0; }
+.api-dot {
+  position: absolute;
+  left: -25px; top: 4px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--card);
+  border: 2.5px solid var(--accent);
+}
+.api-step.green-step .api-dot { border-color: var(--green); }
+.api-phase-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.api-step.green-step .api-phase-label { color: var(--green); }
+.api-endpoint {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+.api-endpoint .method {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-right: 6px;
+  letter-spacing: 0.3px;
+}
+.method.get { background: var(--green-bg); color: var(--green); }
+.method.post { background: var(--orange-bg); color: var(--orange); }
+.api-desc {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ================================================================
+   PRE-REQUISITES
+   ================================================================ */
+.prereq-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 40px;
+}
+.prereq-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 28px;
+  transition: all 0.3s var(--ease);
+}
+.prereq-card:hover {
+  border-color: var(--accent-glow);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+}
+.prereq-icon {
+  width: 44px; height: 44px;
+  border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+.prereq-icon.purple { background: #EDE7F6; }
+.prereq-icon.blue { background: #E3F2FD; }
+.prereq-icon.orange { background: var(--orange-bg); }
+.prereq-icon.green { background: var(--green-bg); }
+.prereq-icon.pink { background: #FCE4EC; }
+.prereq-icon.teal { background: #E0F2F1; }
+.prereq-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+  letter-spacing: -0.2px;
+}
+.prereq-desc {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+.prereq-tag {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.prereq-tag.required { background: var(--red-bg); color: var(--red); }
+.prereq-tag.optional { background: var(--green-bg); color: var(--green); }
+.prereq-tag.one-time { background: var(--orange-bg); color: var(--orange); }
+
+/* ================================================================
+   PIPELINE 8-PHASE SCROLL
+   ================================================================ */
+.phases-scroll {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.phase-card {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 24px;
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 32px;
+  transition: all 0.3s var(--ease);
+}
+.phase-card:hover {
+  border-color: var(--accent-glow);
+  box-shadow: var(--shadow-md);
+}
+.phase-number-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.phase-num-circle {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+}
+.phase-num-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+.phase-content h3 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  margin-bottom: 6px;
+}
+.phase-content .phase-tagline {
+  font-size: 14.5px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+.phase-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.phase-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  background: var(--bg-deep);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+.phase-chip.endpoint { background: var(--accent-soft); color: var(--accent); }
+.phase-chip.logic { background: var(--green-soft); color: var(--green); }
+
+/* Code Walkthrough Expandable */
+.code-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  padding: 7px 16px;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.25s var(--ease);
+  user-select: none;
+}
+.code-toggle:hover {
+  border-color: var(--accent-glow);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.code-toggle.open {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.code-toggle-arrow {
+  display: inline-block;
+  transition: transform 0.3s var(--ease);
+  font-size: 10px;
+}
+.code-toggle.open .code-toggle-arrow { transform: rotate(90deg); }
+
+.code-walkthrough {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s var(--ease), margin 0.3s var(--ease), opacity 0.3s var(--ease);
+  opacity: 0;
+  margin-top: 0;
+}
+.code-walkthrough.open {
+  max-height: 4000px;
+  opacity: 1;
+  margin-top: 20px;
+}
+.code-section {
+  background: #1C1B19;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.code-section + .code-section { margin-top: 12px; }
+.code-doc {
+  padding: 16px 20px;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.code-doc-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 4px;
+  letter-spacing: 0.2px;
+}
+.code-doc-desc {
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.4);
+  line-height: 1.55;
+}
+.code-block {
+  padding: 16px 20px;
+  overflow-x: auto;
+}
+.code-block pre {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.75;
+  color: rgba(255,255,255,0.75);
+  white-space: pre;
+  margin: 0;
+}
+/* Syntax colours */
+.code-block .kw { color: #C4653A; }         /* keywords: import, if, for, def */
+.code-block .fn { color: #7ec87e; }         /* functions */
+.code-block .st { color: #e8a87c; }         /* strings */
+.code-block .cm { color: rgba(255,255,255,0.3); font-style: italic; }  /* comments */
+.code-block .op { color: rgba(255,255,255,0.5); }  /* operators */
+.code-block .nb { color: #90CAF9; }         /* built-ins, constants */
+.code-block .key { color: #CE93D8; }        /* dict keys */
+.code-output {
+  padding: 12px 20px;
+  background: rgba(91,140,90,0.06);
+  border-top: 1px solid rgba(91,140,90,0.15);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: #7ec87e;
+  line-height: 1.65;
+  white-space: pre;
+}
+
+/* ================================================================
+   SIMULATOR
+   ================================================================ */
+.sim-container {
+  background: #1C1B19;
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 40px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.sim-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.sim-dots {
+  display: flex; gap: 7px;
+}
+.sim-dot { width: 11px; height: 11px; border-radius: 50%; }
+.sim-dot.red { background: #FF5F57; }
+.sim-dot.yellow { background: #FEBC2E; }
+.sim-dot.green { background: #28C840; }
+.sim-toolbar-title {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+}
+.sim-btns { display: flex; gap: 8px; }
+.sim-btn {
+  padding: 7px 20px;
+  border-radius: var(--radius-pill);
+  border: none;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s var(--ease);
+  letter-spacing: -0.1px;
+}
+.sim-btn-run {
+  background: var(--green);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(91,140,90,0.35);
+}
+.sim-btn-run:hover { box-shadow: 0 4px 20px rgba(91,140,90,0.5); transform: translateY(-1px); }
+.sim-btn-run:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.sim-btn-reset {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.5);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.sim-btn-reset:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); }
+
+.sim-progress-row {
+  display: flex;
+  gap: 3px;
+  padding: 16px 24px 0;
+}
+.sim-prog-phase {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+.sim-prog-fill {
+  width: 0;
+  height: 100%;
+  background: var(--green);
+  border-radius: 2px;
+  transition: width 0.4s var(--ease);
+}
+.sim-prog-phase.active .sim-prog-fill {
+  width: 100%;
+  background: var(--accent);
+  animation: progPulse 1s ease-in-out infinite alternate;
+}
+.sim-prog-phase.done .sim-prog-fill { width: 100%; background: var(--green); }
+@keyframes progPulse { 0% { opacity: 0.6; } 100% { opacity: 1; } }
+
+.sim-phase-labels {
+  display: flex;
+  gap: 3px;
+  padding: 6px 24px 16px;
+}
+.sim-plabel {
+  flex: 1;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.2);
+  text-align: center;
+  transition: color 0.3s var(--ease);
+}
+.sim-plabel.active { color: var(--accent); }
+.sim-plabel.done { color: var(--green); }
+
+.sim-console {
+  padding: 20px 24px 24px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.65);
+  max-height: 300px;
+  overflow-y: auto;
+  line-height: 1.85;
+}
+.sim-console::-webkit-scrollbar { width: 6px; }
+.sim-console::-webkit-scrollbar-track { background: transparent; }
+.sim-console::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+.sim-line { opacity: 0; animation: lineIn 0.25s forwards; }
+@keyframes lineIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: translateX(0); } }
+.sim-line.success { color: #7ec87e; }
+.sim-line.info { color: rgba(255,255,255,0.35); }
+.sim-line.highlight { color: #e8a87c; }
+.sim-line.header { color: #fff; font-weight: 600; }
+.sim-line.dim { color: rgba(255,255,255,0.15); }
+
+/* ================================================================
+   BEFORE / AFTER
+   ================================================================ */
+.comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 40px;
+}
+.comp-card {
+  border-radius: var(--radius);
+  padding: 36px;
+  border: 1px solid var(--border);
+}
+.comp-before { background: #FFFBF8; border-color: #F0D4C4; }
+.comp-after { background: #F8FBF8; border-color: #C4DEC3; }
+.comp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+.comp-before .comp-badge { background: var(--red); color: #fff; }
+.comp-after .comp-badge { background: var(--green); color: #fff; }
+.comp-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  letter-spacing: -0.3px;
+}
+.comp-steps { list-style: none; }
+.comp-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+.comp-steps li:last-child { border-bottom: none; }
+.comp-step-n {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+}
+.comp-before .comp-step-n { background: rgba(196,74,58,0.1); color: var(--red); }
+.comp-after .comp-step-n { background: rgba(91,140,90,0.1); color: var(--green); }
+.risk-tag {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: rgba(196,74,58,0.1);
+  color: var(--red);
+  margin-left: 4px;
+  vertical-align: middle;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.comp-total {
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+.comp-before .comp-total { background: rgba(196,74,58,0.06); }
+.comp-after .comp-total { background: rgba(91,140,90,0.06); }
+.comp-total-num {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.comp-before .comp-total-num { color: var(--red); }
+.comp-after .comp-total-num { color: var(--green); }
+.comp-total-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ================================================================
+   CALCULATOR
+   ================================================================ */
+.calc-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 40px;
+  margin-top: 40px;
+}
+.calc-sliders {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-bottom: 36px;
+}
+.calc-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.calc-group input[type="range"] {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+}
+.calc-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px; height: 22px;
+  background: var(--card);
+  border: 2.5px solid var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s var(--ease);
+}
+.calc-group input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 6px var(--accent-soft);
+}
+.calc-val {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 10px;
+  letter-spacing: -0.5px;
+}
+.calc-val-unit {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-tertiary);
+  font-family: var(--font-body);
+}
+.calc-results {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.calc-result {
+  background: var(--bg-deep);
+  border-radius: var(--radius-sm);
+  padding: 28px 20px;
+  text-align: center;
+  transition: all 0.3s var(--ease);
+}
+.calc-result:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.calc-result-val {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 6px;
+  letter-spacing: -0.5px;
+}
+.calc-result-val.green { color: var(--green); }
+.calc-result-val.accent { color: var(--accent); }
+.calc-result-lbl {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+/* ================================================================
+   CONFIGURATION TABLE
+   ================================================================ */
+.config-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-top: 40px;
+  overflow: hidden;
+}
+.config-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.config-table th {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  text-align: left;
+  padding: 16px 24px;
+  background: var(--bg-deep);
+  border-bottom: 1px solid var(--border);
+}
+.config-table td {
+  padding: 14px 24px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: top;
+}
+.config-table tr:last-child td { border-bottom: none; }
+.config-table tbody tr:hover { background: var(--accent-soft); }
+.config-table code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-weight: 500;
+}
+.config-group-row td {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  padding: 20px 24px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+/* ================================================================
+   DEPLOYMENT INTELLIGENCE
+   ================================================================ */
+.intel-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 40px 0;
+  margin-top: 32px;
+}
+.intel-box {
+  padding: 24px 32px;
+  border-radius: var(--radius);
+  text-align: center;
+  min-width: 200px;
+  transition: all 0.3s var(--ease);
+}
+.intel-box:hover { transform: translateY(-2px); }
+.intel-question {
+  background: var(--orange-bg);
+  border: 2px solid var(--orange);
+}
+.intel-question .intel-q {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--orange);
+}
+.intel-answer {
+  border: 2px solid var(--border);
+  background: var(--card);
+}
+.intel-answer.yes { border-color: var(--green); background: var(--green-bg); }
+.intel-answer.no { border-color: var(--orange); background: var(--orange-bg); }
+.intel-answer strong {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+.intel-answer.yes strong { color: var(--green); }
+.intel-answer.no strong { color: var(--orange); }
+.intel-answer span { font-size: 12px; color: var(--text-secondary); }
+.intel-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--text-tertiary);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.intel-arrow svg { width: 24px; height: 24px; stroke: var(--text-tertiary); fill: none; stroke-width: 2; }
+.intel-branch {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.intel-callout {
+  background: var(--card);
+  border-left: 3px solid var(--green);
+  border-radius: var(--radius-sm);
+  padding: 24px 28px;
+  margin-top: 24px;
+}
+.intel-callout p {
+  font-size: 14.5px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+.intel-callout strong { color: var(--text); }
+
+/* ================================================================
+   DEPLOYMENT HISTORY
+   ================================================================ */
+.history-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-top: 40px;
+  overflow: hidden;
+}
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.history-table th {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  text-align: left;
+  padding: 16px 24px;
+  background: var(--bg-deep);
+  border-bottom: 1px solid var(--border);
+}
+.history-table td {
+  padding: 14px 24px;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  border-bottom: 1px solid var(--border-light);
+}
+.history-table tbody tr:hover { background: var(--accent-soft); }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 11px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-body);
+}
+.badge.ok { background: var(--green-bg); color: var(--green); }
+.badge.full { background: var(--orange-bg); color: var(--orange); }
+.badge.report { background: var(--green-bg); color: var(--green); }
+
+/* ================================================================
+   FOOTER
+   ================================================================ */
+.site-footer {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 32px 40px 48px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  border-top: 1px solid var(--border);
+}
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+@media (max-width: 900px) {
+  .hero h1 { font-size: 36px; }
+  .section { padding: 56px 24px; }
+  .hero { padding: 130px 24px 56px; }
+  .stats-row { gap: 24px; flex-wrap: wrap; }
+  .stat-val { font-size: 32px; }
+  .prereq-grid { grid-template-columns: 1fr; }
+  .comparison { grid-template-columns: 1fr; }
+  .calc-sliders { grid-template-columns: 1fr; }
+  .calc-results { grid-template-columns: repeat(2, 1fr); }
+  .arch-flow { justify-content: flex-start; }
+  .phase-card { grid-template-columns: 60px 1fr; gap: 16px; padding: 24px; }
+  .nav-links { display: none; }
+  .intel-visual { flex-direction: column; }
+  .intel-arrow svg { transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+
+<!-- ================================================================
+     FROSTED GLASS NAV
+     ================================================================ -->
+<nav class="top-nav" id="topNav">
+  <div class="nav-inner">
+    <div class="nav-brand">
+      <img src="data:image/png;base64,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" alt="Microsoft Fabric" style="width:36px;height:36px;object-fit:contain;">
+      <div>
+        <div style="font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);line-height:1.3;">Microsoft Fabric</div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.4;">Content Author: By Shrikesh Pattni | Lead Architect</div>
+        <div style="font-size:13px;font-weight:600;color:var(--accent);letter-spacing:-0.1px;line-height:1.4;">Fabric Accelerator: CI/CD Pipeline Automation Playbook</div>
+      </div>
+    </div>
+    <div class="nav-links">
+      <a href="#architecture" class="nav-link active" data-nav>Architecture</a>
+      <a href="#prereqs" class="nav-link" data-nav>Pre-Setup</a>
+      <a href="#phases" class="nav-link" data-nav>Phases</a>
+      <a href="#simulator" class="nav-link" data-nav>Simulator</a>
+      <a href="#impact" class="nav-link" data-nav>Impact</a>
+      <a href="#config" class="nav-link" data-nav>Configuration</a>
+      <a href="#history" class="nav-link" data-nav>History</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ================================================================
+     HERO
+     ================================================================ -->
+<section class="hero">
+  <div class="fade-section" id="heroFade">
+    <div class="hero-eyebrow">
+      <span class="hero-eyebrow-dot"></span>
+      CI/CD Automation — Microsoft Fabric
+    </div>
+    <h1>Automated Deployment<br>Pipeline. <span>Dev → UAT.</span></h1>
+    <p class="hero-sub">
+      A fully automated workflow using the Power BI REST API and Fabric Deployment Pipelines.
+      Zero portal clicks. Full audit trail. Intelligent deployment logic.
+    </p>
+  </div>
+  <div class="stats-row fade-section stagger-1" id="statsFade">
+    <div class="stat-item">
+      <div class="stat-val accent">8</div>
+      <div class="stat-label">Automated Phases</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val green">13</div>
+      <div class="stat-label">Successful Deploys</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">~1s</div>
+      <div class="stat-label">Avg Deploy Time</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val accent">0</div>
+      <div class="stat-label">Manual Steps</div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"><hr></div>
+
+<!-- ================================================================
+     ARCHITECTURE
+     ================================================================ -->
+<section class="section fade-section" id="architecture">
+  <div class="section-label">System Architecture</div>
+  <div class="section-title">Infrastructure Topology</div>
+  <div class="section-desc">
+    The end-to-end system connecting authentication, source control, and deployment across Fabric workspaces — all orchestrated through a single Fabric Notebook.
+  </div>
+
+  <div class="arch-diagram">
+    <div class="arch-flow">
+      <div class="arch-node">
+        <div class="arch-icon-box auth">🔐</div>
+        <div class="arch-node-name">Entra ID</div>
+        <div class="arch-node-sub">Service Principal</div>
+      </div>
+      <div class="arch-arrow">
+        <div>
+          <svg viewBox="0 0 32 12"><path d="M0 6h28m0 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          <div class="arch-arrow-label">OAuth Token</div>
+        </div>
+      </div>
+      <div class="arch-node">
+        <div class="arch-icon-box notebook">📓</div>
+        <div class="arch-node-name">Fabric Notebook</div>
+        <div class="arch-node-sub">Python Orchestrator</div>
+      </div>
+      <div class="arch-arrow">
+        <div>
+          <svg viewBox="0 0 32 12"><path d="M0 6h28m0 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          <div class="arch-arrow-label">REST API</div>
+        </div>
+      </div>
+      <div class="arch-node">
+        <div class="arch-icon-box api">🌐</div>
+        <div class="arch-node-name">Power BI API</div>
+        <div class="arch-node-sub">api.powerbi.com</div>
+      </div>
+      <div class="arch-arrow">
+        <div>
+          <svg viewBox="0 0 32 12"><path d="M0 6h28m0 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          <div class="arch-arrow-label">Pipeline</div>
+        </div>
+      </div>
+      <div class="arch-node">
+        <div class="arch-icon-box dev">📦</div>
+        <div class="arch-node-name">Dev Workspace</div>
+        <div class="arch-node-sub">Source Stage (0)</div>
+      </div>
+      <div class="arch-arrow">
+        <div>
+          <svg viewBox="0 0 32 12"><path d="M0 6h28m0 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          <div class="arch-arrow-label">Deploy</div>
+        </div>
+      </div>
+      <div class="arch-node">
+        <div class="arch-icon-box pipeline">🚀</div>
+        <div class="arch-node-name">Deployment Pipeline</div>
+        <div class="arch-node-sub">AnalyticsBI_DevToUAT</div>
+      </div>
+      <div class="arch-arrow">
+        <div>
+          <svg viewBox="0 0 32 12"><path d="M0 6h28m0 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          <div class="arch-arrow-label">Target</div>
+        </div>
+      </div>
+      <div class="arch-node">
+        <div class="arch-icon-box uat">📊</div>
+        <div class="arch-node-name">UAT Workspace</div>
+        <div class="arch-node-sub">Target Stage (1)</div>
+      </div>
+      <div class="arch-arrow">
+        <div>
+          <svg viewBox="0 0 32 12"><path d="M0 6h28m0 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          <div class="arch-arrow-label">Connection</div>
+        </div>
+      </div>
+      <div class="arch-node">
+        <div class="arch-icon-box gateway">🔌</div>
+        <div class="arch-node-name">Cloud Gateway</div>
+        <div class="arch-node-sub">LH_Marketing_CRM</div>
+      </div>
+      <div class="arch-arrow">
+        <div>
+          <svg viewBox="0 0 32 12"><path d="M0 6h28m0 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          <div class="arch-arrow-label">Data</div>
+        </div>
+      </div>
+      <div class="arch-node">
+        <div class="arch-icon-box lakehouse">🏠</div>
+        <div class="arch-node-name">Lakehouse</div>
+        <div class="arch-node-sub">Fabric Lakehouse</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- API CALL FLOW -->
+  <div class="api-flow">
+    <div class="api-flow-title">API Call Sequence</div>
+    <div class="api-timeline">
+      <div class="api-step">
+        <div class="api-dot"></div>
+        <div class="api-phase-label">Phase 1 — Authentication</div>
+        <div class="api-endpoint"><span class="method post">POST</span>/oauth2/v2.0/token</div>
+        <div class="api-desc">Acquires bearer token via client_credentials grant using service principal.</div>
+      </div>
+      <div class="api-step">
+        <div class="api-dot"></div>
+        <div class="api-phase-label">Phase 2 — Pipeline Setup</div>
+        <div class="api-endpoint"><span class="method get">GET</span>/pipelines</div>
+        <div class="api-desc">Discovers existing pipeline by display name, or creates a new one.</div>
+      </div>
+      <div class="api-step">
+        <div class="api-dot"></div>
+        <div class="api-phase-label">Phase 2 — Stage Assignment</div>
+        <div class="api-endpoint"><span class="method get">GET</span>/pipelines/{id}/stages</div>
+        <div class="api-desc">Validates Dev (Stage 0) and UAT (Stage 1) workspace assignments.</div>
+      </div>
+      <div class="api-step">
+        <div class="api-dot"></div>
+        <div class="api-phase-label">Phase 3 — Pre-Deployment Validation</div>
+        <div class="api-endpoint"><span class="method get">GET</span>/pipelines/{id}/stages/0/artifacts</div>
+        <div class="api-desc">Lists all Dev artifacts and cross-references against deployment manifest.</div>
+      </div>
+      <div class="api-step">
+        <div class="api-dot"></div>
+        <div class="api-phase-label">Phase 4 — UAT State Check</div>
+        <div class="api-endpoint"><span class="method get">GET</span>/pipelines/{id}/stages/1/artifacts</div>
+        <div class="api-desc">Detects if UAT already has items → determines report-only vs full deploy.</div>
+      </div>
+      <div class="api-step">
+        <div class="api-dot"></div>
+        <div class="api-phase-label">Phase 4 — Deploy</div>
+        <div class="api-endpoint"><span class="method post">POST</span>/pipelines/{id}/deploy</div>
+        <div class="api-desc">Triggers async deployment. Returns operation ID for polling.</div>
+      </div>
+      <div class="api-step green-step">
+        <div class="api-dot"></div>
+        <div class="api-phase-label">Phase 5 — Poll</div>
+        <div class="api-endpoint"><span class="method get">GET</span>/pipelines/{id}/operations/{opId}</div>
+        <div class="api-desc">Polls every 5s until Succeeded, Failed, or 300s timeout.</div>
+      </div>
+      <div class="api-step">
+        <div class="api-dot"></div>
+        <div class="api-phase-label">Phase 6 — TakeOver (first deploy only)</div>
+        <div class="api-endpoint"><span class="method post">POST</span>/datasets/{id}/Default.TakeOver</div>
+        <div class="api-desc">Service principal takes ownership of UAT semantic model.</div>
+      </div>
+      <div class="api-step">
+        <div class="api-dot"></div>
+        <div class="api-phase-label">Phase 6 — Bind Gateway (first deploy only)</div>
+        <div class="api-endpoint"><span class="method post">POST</span>/datasets/{id}/Default.BindToGateway</div>
+        <div class="api-desc">Binds semantic model to cloud connection gateway and datasource.</div>
+      </div>
+      <div class="api-step green-step">
+        <div class="api-dot"></div>
+        <div class="api-phase-label">Phase 7 — Verification</div>
+        <div class="api-endpoint"><span class="method get">GET</span>/pipelines/{id}/stages/1/artifacts</div>
+        <div class="api-desc">Confirms datasets and reports are present in UAT after deployment.</div>
+      </div>
+      <div class="api-step green-step">
+        <div class="api-dot"></div>
+        <div class="api-phase-label">Phase 8 — Audit Log</div>
+        <div class="api-endpoint"><span class="method get">GET</span>/pipelines/{id}/operations</div>
+        <div class="api-desc">Extracts full deployment history into structured DataFrame.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"><hr></div>
+
+<!-- ================================================================
+     PRE-REQUISITES
+     ================================================================ -->
+<section class="section fade-section" id="prereqs">
+  <div class="section-label">Before You Begin</div>
+  <div class="section-title">Pre-Setup Requirements</div>
+  <div class="section-desc">
+    Everything that needs to be in place before the notebook can run. Most items are one-time setup — once configured, all future deployments are fully automated.
+  </div>
+
+  <div class="prereq-grid">
+    <div class="prereq-card">
+      <div class="prereq-icon purple">🔐</div>
+      <div class="prereq-name">Service Principal in Entra ID</div>
+      <div class="prereq-desc">Register an App Registration in Microsoft Entra ID (Azure AD). Generate a client secret and note the Tenant ID, Client ID, and Client Secret. This identity authenticates all API calls.</div>
+      <span class="prereq-tag required">Required</span>
+    </div>
+    <div class="prereq-card">
+      <div class="prereq-icon blue">🏢</div>
+      <div class="prereq-name">Fabric Workspace Permissions</div>
+      <div class="prereq-desc">The service principal must be added as a Member (or Admin) to both the Dev and UAT workspaces. Without this, the API calls to list artifacts and trigger deployments will fail with 401/403.</div>
+      <span class="prereq-tag required">Required</span>
+    </div>
+    <div class="prereq-card">
+      <div class="prereq-icon orange">⚙️</div>
+      <div class="prereq-name">Tenant Admin: API Access for SPs</div>
+      <div class="prereq-desc">In the Fabric Admin Portal, enable "Allow service principals to use Power BI APIs" under Tenant Settings → Developer Settings. This is a tenant-level toggle that must be on.</div>
+      <span class="prereq-tag required">Required</span>
+    </div>
+    <div class="prereq-card">
+      <div class="prereq-icon green">🔗</div>
+      <div class="prereq-name">Deployment Pipeline Created</div>
+      <div class="prereq-desc">The notebook can auto-create and assign workspaces to the pipeline. However, if your organisation restricts pipeline creation, you may need to pre-create it in the Fabric portal.</div>
+      <span class="prereq-tag optional">Auto-Created</span>
+    </div>
+    <div class="prereq-card">
+      <div class="prereq-icon teal">☁️</div>
+      <div class="prereq-name">Cloud Connection (Gateway)</div>
+      <div class="prereq-desc">A shareable cloud connection (e.g. LH_Marketing_CRM) must exist in the Fabric portal. The UAT semantic model will bind to this connection's gateway and datasource IDs after first deployment.</div>
+      <span class="prereq-tag required">Required</span>
+    </div>
+    <div class="prereq-card">
+      <div class="prereq-icon pink">🗺️</div>
+      <div class="prereq-name">Manual Connection Mapping</div>
+      <div class="prereq-desc">After the first full deployment, you must manually map the UAT semantic model to the named cloud connection in the portal (Settings → Gateway → Maps To). This is a one-time step — the API cannot do this.</div>
+      <span class="prereq-tag one-time">One-Time Only</span>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"><hr></div>
+
+<!-- ================================================================
+     8 PHASES — SCROLL CARDS
+     ================================================================ -->
+<section class="section fade-section" id="phases">
+  <div class="section-label">Pipeline Workflow</div>
+  <div class="section-title">Eight Phases, One Click</div>
+  <div class="section-desc">
+    Each phase executes sequentially. The notebook handles authentication, validation, deployment, monitoring, configuration, verification, and logging — all automatically.
+  </div>
+
+  <div class="phases-scroll">
+    <div class="phase-card fade-section">
+      <div class="phase-number-col">
+        <div class="phase-num-circle">🔑</div>
+        <div class="phase-num-text">01</div>
+      </div>
+      <div class="phase-content">
+        <h3>Authentication</h3>
+        <p class="phase-tagline">Acquires an OAuth2 bearer token from Entra ID using service principal client_credentials flow. Token scoped to the Power BI API resource. Fails fast if credentials have expired.</p>
+        <div class="phase-meta">
+          <span class="phase-chip endpoint">POST /oauth2/v2.0/token</span>
+          <span class="phase-chip">client_credentials</span>
+        </div>
+        <div class="code-toggle" onclick="toggleCode(this)">
+          <span class="code-toggle-arrow">▶</span> View Notebook Code
+        </div>
+        <div class="code-walkthrough">
+          <div class="code-section">
+            <div class="code-doc">
+              <div class="code-doc-title">Token Request Body</div>
+              <div class="code-doc-desc">Constructs the OAuth2 payload using the service principal credentials defined in Cell 1. The scope targets the Power BI API resource with the .default suffix, which requests all statically configured permissions.</div>
+            </div>
+            <div class="code-block"><pre>body <span class="op">=</span> {
+    <span class="key">'client_id'</span>:     CLIENT_ID,
+    <span class="key">'scope'</span>:         <span class="st">f'{RESOURCE}/.default'</span>,
+    <span class="key">'client_secret'</span>: CLIENT_SECRET,
+    <span class="key">'grant_type'</span>:    <span class="st">'client_credentials'</span>
+}</pre></div>
+          </div>
+          <div class="code-section">
+            <div class="code-doc">
+              <div class="code-doc-title">POST to Entra ID Token Endpoint</div>
+              <div class="code-doc-desc">Sends the credentials to the Microsoft identity platform. If the response is not 200, the notebook halts immediately with a clear error message — most commonly caused by an expired client secret in Entra ID.</div>
+            </div>
+            <div class="code-block"><pre>response <span class="op">=</span> <span class="fn">requests.post</span>(AUTHORITY, data<span class="op">=</span>body,
+    headers<span class="op">=</span>{<span class="key">'Content-Type'</span>: <span class="st">'application/x-www-form-urlencoded'</span>})
+
+<span class="kw">if</span> response.status_code <span class="op">!=</span> <span class="nb">200</span>:
+    <span class="kw">raise</span> <span class="fn">Exception</span>(<span class="st">"Authentication failed — check client secret expiry"</span>)
+
+access_token <span class="op">=</span> response.json()[<span class="key">'access_token'</span>]
+api_headers <span class="op">=</span> {
+    <span class="key">'Authorization'</span>: <span class="st">f'Bearer {access_token}'</span>,
+    <span class="key">'Content-Type'</span>:  <span class="st">'application/json'</span>
+}</pre></div>
+            <div class="code-output">  Token acquired successfully</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase-card fade-section">
+      <div class="phase-number-col">
+        <div class="phase-num-circle">🔗</div>
+        <div class="phase-num-text">02</div>
+      </div>
+      <div class="phase-content">
+        <h3>Pipeline Setup</h3>
+        <p class="phase-tagline">Discovers or creates the deployment pipeline by name. Validates that Dev and UAT workspaces are correctly assigned to Stage 0 and Stage 1 respectively. Auto-assigns if missing.</p>
+        <div class="phase-meta">
+          <span class="phase-chip endpoint">GET /pipelines</span>
+          <span class="phase-chip endpoint">GET /stages</span>
+          <span class="phase-chip logic">auto-assign workspaces</span>
+        </div>
+        <div class="code-toggle" onclick="toggleCode(this)">
+          <span class="code-toggle-arrow">▶</span> View Notebook Code
+        </div>
+        <div class="code-walkthrough">
+          <div class="code-section">
+            <div class="code-doc">
+              <div class="code-doc-title">Pipeline Discovery</div>
+              <div class="code-doc-desc">Queries all deployment pipelines the service principal has access to, then searches for a match by display name. If found, reuses it. If not, creates a new one via POST — making the notebook self-provisioning.</div>
+            </div>
+            <div class="code-block"><pre>response <span class="op">=</span> <span class="fn">requests.get</span>(<span class="st">f"{BASE_URL}/pipelines"</span>, headers<span class="op">=</span>api_headers)
+
+pipeline_id <span class="op">=</span> <span class="nb">None</span>
+<span class="kw">for</span> p <span class="kw">in</span> response.json().get(<span class="st">'value'</span>, []):
+    <span class="kw">if</span> p[<span class="st">'displayName'</span>] <span class="op">==</span> PIPELINE_NAME:
+        pipeline_id <span class="op">=</span> p[<span class="st">'id'</span>]
+        <span class="kw">break</span>
+
+<span class="cm"># Create pipeline if it does not exist</span>
+<span class="kw">if not</span> pipeline_id:
+    response <span class="op">=</span> <span class="fn">requests.post</span>(
+        <span class="st">f"{BASE_URL}/pipelines"</span>, headers<span class="op">=</span>api_headers,
+        json<span class="op">=</span>{<span class="key">"displayName"</span>: PIPELINE_NAME})
+    pipeline_id <span class="op">=</span> response.json()[<span class="st">'id'</span>]</pre></div>
+          </div>
+          <div class="code-section">
+            <div class="code-doc">
+              <div class="code-doc-title">Stage Workspace Assignment</div>
+              <div class="code-doc-desc">Checks each pipeline stage for an assigned workspace. If a stage is unassigned but has a mapped workspace in the configuration, it auto-assigns it. This ensures the pipeline is ready to deploy without any manual portal setup.</div>
+            </div>
+            <div class="code-block"><pre>workspace_map <span class="op">=</span> {<span class="nb">0</span>: DEV_WORKSPACE_ID, <span class="nb">1</span>: UAT_WORKSPACE_ID}
+
+<span class="kw">for</span> stage <span class="kw">in</span> stages:
+    order <span class="op">=</span> stage[<span class="st">'order'</span>]
+    ws_id <span class="op">=</span> stage.get(<span class="st">'workspaceId'</span>)
+
+    <span class="kw">if</span> ws_id:
+        <span class="fn">print</span>(<span class="st">f"  Stage {order}: {ws_id}"</span>)
+    <span class="kw">elif</span> order <span class="kw">in</span> workspace_map:
+        <span class="fn">requests.post</span>(
+            <span class="st">f"{BASE_URL}/pipelines/{pipeline_id}/stages/{order}/assignWorkspace"</span>,
+            headers<span class="op">=</span>api_headers,
+            json<span class="op">=</span>{<span class="key">"workspaceId"</span>: workspace_map[order]})</pre></div>
+            <div class="code-output">  Found existing pipeline: AnalyticsBI_DevToUAT
+  Pipeline ID: 897b66f2-ddbf-4c77-8c64-a2e7555ce1a4
+  Stage 0 (Development): 547dab98-...
+  Stage 1 (Test/UAT): b34b7f5f-...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase-card fade-section">
+      <div class="phase-number-col">
+        <div class="phase-num-circle">✅</div>
+        <div class="phase-num-text">03</div>
+      </div>
+      <div class="phase-content">
+        <h3>Pre-Deployment Check</h3>
+        <p class="phase-tagline">Cross-references every item in the deployment manifest against artifacts in the Dev stage. If any sourceId is missing, the pipeline halts immediately — zero risk of deploying non-existent items.</p>
+        <div class="phase-meta">
+          <span class="phase-chip endpoint">GET /stages/0/artifacts</span>
+          <span class="phase-chip logic">manifest validation</span>
+        </div>
+        <div class="code-toggle" onclick="toggleCode(this)">
+          <span class="code-toggle-arrow">▶</span> View Notebook Code
+        </div>
+        <div class="code-walkthrough">
+          <div class="code-section">
+            <div class="code-doc">
+              <div class="code-doc-title">Artifact Discovery and Manifest Validation</div>
+              <div class="code-doc-desc">Retrieves all artifacts from the Dev stage (datasets, reports, dashboards, dataflows), then validates every item in the ITEMS_TO_DEPLOY dictionary exists in the source. If any ID is missing, an exception halts execution before any changes are made to UAT.</div>
+            </div>
+            <div class="code-block"><pre>artifacts_url <span class="op">=</span> <span class="st">f"{BASE_URL}/pipelines/{pipeline_id}/stages/0/artifacts"</span>
+response <span class="op">=</span> <span class="fn">requests.get</span>(artifacts_url, headers<span class="op">=</span>api_headers)
+dev_data <span class="op">=</span> response.json()
+
+<span class="cm"># Build list of all artifact IDs in the Dev stage</span>
+all_stage_ids <span class="op">=</span> []
+<span class="kw">for</span> item_type <span class="kw">in</span> [<span class="st">'datasets'</span>, <span class="st">'reports'</span>]:
+    all_stage_ids.extend([i[<span class="st">'artifactId'</span>] <span class="kw">for</span> i <span class="kw">in</span> dev_data.get(item_type, [])])
+
+<span class="cm"># Cross-reference every deployment item against Dev</span>
+all_valid <span class="op">=</span> <span class="nb">True</span>
+<span class="kw">for</span> item_type, items <span class="kw">in</span> ITEMS_TO_DEPLOY.items():
+    <span class="kw">for</span> item <span class="kw">in</span> items:
+        <span class="kw">if</span> item[<span class="st">'sourceId'</span>] <span class="kw">in</span> all_stage_ids:
+            <span class="fn">print</span>(<span class="st">f"VALID   {item_type}: {item['sourceId']}"</span>)
+        <span class="kw">else</span>:
+            <span class="fn">print</span>(<span class="st">f"MISSING {item_type}: {item['sourceId']}"</span>)
+            all_valid <span class="op">=</span> <span class="nb">False</span>
+
+<span class="kw">if not</span> all_valid:
+    <span class="kw">raise</span> <span class="fn">Exception</span>(<span class="st">"Some items not found in Dev stage"</span>)</pre></div>
+            <div class="code-output">  VALID   datasets: a0461642-df45-442d-8383-671e60c356a4
+  VALID   reports: c0403d79-2866-4edd-b60a-943986271421
+  All items validated — ready to deploy</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase-card fade-section">
+      <div class="phase-number-col">
+        <div class="phase-num-circle">🚀</div>
+        <div class="phase-num-text">04</div>
+      </div>
+      <div class="phase-content">
+        <h3>Deploy (Smart Detection)</h3>
+        <p class="phase-tagline">Checks if UAT already has items. If yes → report-only deployment (preserves existing data connection). If empty → full deployment (semantic model + report). Eliminates the most common deployment error.</p>
+        <div class="phase-meta">
+          <span class="phase-chip endpoint">POST /deploy</span>
+          <span class="phase-chip logic">report-only vs full</span>
+          <span class="phase-chip">async HTTP 202</span>
+        </div>
+        <div class="code-toggle" onclick="toggleCode(this)">
+          <span class="code-toggle-arrow">▶</span> View Notebook Code
+        </div>
+        <div class="code-walkthrough">
+          <div class="code-section">
+            <div class="code-doc">
+              <div class="code-doc-title">Smart Mode Detection</div>
+              <div class="code-doc-desc">Queries the UAT stage to check whether datasets and reports already exist. If UAT has items, it switches to report-only mode — this is the key logic that preserves the UAT semantic model's cloud connection mapping and eliminates the need for manual reconfiguration.</div>
+            </div>
+            <div class="code-block"><pre><span class="cm"># Check if UAT already has items</span>
+uat_check <span class="op">=</span> <span class="fn">requests.get</span>(uat_artifacts_url, headers<span class="op">=</span>api_headers)
+uat_data <span class="op">=</span> uat_check.json()
+
+uat_has_datasets <span class="op">=</span> <span class="fn">len</span>(uat_data.get(<span class="st">'datasets'</span>, [])) <span class="op">></span> <span class="nb">0</span>
+uat_has_reports  <span class="op">=</span> <span class="fn">len</span>(uat_data.get(<span class="st">'reports'</span>, []))  <span class="op">></span> <span class="nb">0</span>
+
+<span class="cm"># Decide deployment mode</span>
+<span class="kw">if</span> uat_has_datasets <span class="kw">and</span> uat_has_reports:
+    deploy_mode <span class="op">=</span> <span class="st">"REPORT ONLY"</span>
+    deploy_items <span class="op">=</span> {<span class="key">"reports"</span>: ITEMS_TO_DEPLOY.get(<span class="st">"reports"</span>, [])}
+<span class="kw">else</span>:
+    deploy_mode <span class="op">=</span> <span class="st">"FULL (Dataset + Report)"</span>
+    deploy_items <span class="op">=</span> {
+        <span class="key">"datasets"</span>: ITEMS_TO_DEPLOY.get(<span class="st">"datasets"</span>, []),
+        <span class="key">"reports"</span>:  ITEMS_TO_DEPLOY.get(<span class="st">"reports"</span>, [])
+    }</pre></div>
+          </div>
+          <div class="code-section">
+            <div class="code-doc">
+              <div class="code-doc-title">Deploy Request</div>
+              <div class="code-doc-desc">Constructs and sends the deployment payload. The API returns HTTP 202 (Accepted) with an operation ID — the deployment runs asynchronously and is monitored in Phase 5. Options include allowTakeover for ownership transfer between service principals.</div>
+            </div>
+            <div class="code-block"><pre>deploy_body <span class="op">=</span> {
+    <span class="key">"sourceStageOrder"</span>: SOURCE_STAGE_ORDER,
+    <span class="key">"options"</span>: {
+        <span class="key">"allowCreateArtifact"</span>:    ALLOW_CREATE,
+        <span class="key">"allowOverwriteArtifact"</span>: ALLOW_OVERWRITE,
+        <span class="key">"allowTakeover"</span>:          <span class="nb">True</span>
+    },
+    <span class="key">"note"</span>: <span class="st">f"Automated deployment ({deploy_mode})"</span>
+}
+
+response <span class="op">=</span> <span class="fn">requests.post</span>(
+    <span class="st">f"{BASE_URL}/pipelines/{pipeline_id}/deploy"</span>,
+    headers<span class="op">=</span>api_headers, json<span class="op">=</span>deploy_body)
+
+operation_id <span class="op">=</span> response.json()[<span class="st">'id'</span>]</pre></div>
+            <div class="code-output">  Mode: REPORT ONLY (UAT has semantic model — preserving connection)
+  Deployment accepted
+  Operation ID: e9d807ee-fae1-4b0c-88b9-b7fbddf5af64</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase-card fade-section">
+      <div class="phase-number-col">
+        <div class="phase-num-circle">⏳</div>
+        <div class="phase-num-text">05</div>
+      </div>
+      <div class="phase-content">
+        <h3>Poll for Completion</h3>
+        <p class="phase-tagline">Async polling loop monitors the deployment operation every 5 seconds, with a 300-second timeout. Extracts execution plan steps on success, or detailed error codes on failure.</p>
+        <div class="phase-meta">
+          <span class="phase-chip endpoint">GET /operations/{opId}</span>
+          <span class="phase-chip">5s interval</span>
+          <span class="phase-chip">300s max</span>
+        </div>
+        <div class="code-toggle" onclick="toggleCode(this)">
+          <span class="code-toggle-arrow">▶</span> View Notebook Code
+        </div>
+        <div class="code-walkthrough">
+          <div class="code-section">
+            <div class="code-doc">
+              <div class="code-doc-title">Asynchronous Polling Loop</div>
+              <div class="code-doc-desc">The Power BI deploy endpoint is asynchronous — it returns immediately with an operation ID. This loop polls the operation status endpoint every 5 seconds until it reaches a terminal state (Succeeded or Failed). On success, it extracts the execution plan details. On failure, it surfaces the error code and details for debugging.</div>
+            </div>
+            <div class="code-block"><pre>operation_url <span class="op">=</span> <span class="st">f"{BASE_URL}/pipelines/{pipeline_id}/operations/{operation_id}"</span>
+max_wait      <span class="op">=</span> <span class="nb">300</span>   <span class="cm"># 5-minute timeout</span>
+poll_interval <span class="op">=</span> <span class="nb">5</span>
+elapsed       <span class="op">=</span> <span class="nb">0</span>
+
+<span class="kw">while</span> elapsed <span class="op"><</span> max_wait:
+    response <span class="op">=</span> <span class="fn">requests.get</span>(operation_url, headers<span class="op">=</span>api_headers)
+    operation <span class="op">=</span> response.json()
+    status    <span class="op">=</span> operation.get(<span class="st">'status'</span>, <span class="st">'Unknown'</span>)
+
+    <span class="kw">if</span> status <span class="op">==</span> <span class="st">'Succeeded'</span>:
+        <span class="cm"># Extract execution plan steps</span>
+        steps <span class="op">=</span> operation.get(<span class="st">'executionPlan'</span>, {}).get(<span class="st">'steps'</span>, [])
+        <span class="kw">for</span> step <span class="kw">in</span> steps:
+            src <span class="op">=</span> step.get(<span class="st">'sourceAndTarget'</span>, {})
+            <span class="fn">print</span>(<span class="st">f"  {src.get('sourceDisplayName')} — {step.get('status')}"</span>)
+        <span class="kw">break</span>
+
+    <span class="kw">elif</span> status <span class="op">==</span> <span class="st">'Failed'</span>:
+        <span class="kw">raise</span> <span class="fn">Exception</span>(<span class="st">"Deployment failed"</span>)
+
+    <span class="fn">time.sleep</span>(poll_interval)
+    elapsed <span class="op">+=</span> poll_interval</pre></div>
+            <div class="code-output">  DEPLOYMENT SUCCEEDED
+  Started : 2026-02-22T15:54:34.773Z
+  Ended   : 2026-02-22T15:54:35.9Z
+  06.Lakehouse View to PBI Version 04 (ReportDeployment) — Succeeded</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase-card fade-section">
+      <div class="phase-number-col">
+        <div class="phase-num-circle">⚡</div>
+        <div class="phase-num-text">06</div>
+      </div>
+      <div class="phase-content">
+        <h3>Auto-Configuration</h3>
+        <p class="phase-tagline">First deploy only: service principal takes over the UAT semantic model, then binds it to the cloud connection gateway. Skipped entirely on subsequent report-only deployments.</p>
+        <div class="phase-meta">
+          <span class="phase-chip endpoint">POST /TakeOver</span>
+          <span class="phase-chip endpoint">POST /BindToGateway</span>
+          <span class="phase-chip logic">first deploy only</span>
+        </div>
+        <div class="code-toggle" onclick="toggleCode(this)">
+          <span class="code-toggle-arrow">▶</span> View Notebook Code
+        </div>
+        <div class="code-walkthrough">
+          <div class="code-section">
+            <div class="code-doc">
+              <div class="code-doc-title">Conditional Execution — Skip on Report-Only</div>
+              <div class="code-doc-desc">The is_first_deployment flag is set in Phase 4. If this is a report-only deployment, the entire auto-configuration is skipped because the UAT semantic model already has its connection configured from a previous full deployment.</div>
+            </div>
+            <div class="code-block"><pre><span class="kw">if not</span> is_first_deployment:
+    <span class="fn">print</span>(<span class="st">"SKIPPED — report-only deployment, connection already configured"</span>)
+<span class="kw">else</span>:
+    <span class="cm"># Step 1: Discover UAT dataset ID from pipeline artifacts</span>
+    uat_dataset_id <span class="op">=</span> uat_datasets[<span class="nb">0</span>][<span class="st">'artifactId'</span>]
+
+    <span class="cm"># Step 2: Service principal takes over the semantic model</span>
+    takeover_url <span class="op">=</span> <span class="st">f"{BASE_URL}/groups/{UAT_WORKSPACE_ID}/datasets/{uat_dataset_id}/Default.TakeOver"</span>
+    <span class="fn">requests.post</span>(takeover_url, headers<span class="op">=</span>api_headers)
+
+    <span class="cm"># Step 3: Bind to cloud connection</span>
+    bind_url <span class="op">=</span> <span class="st">f"{BASE_URL}/groups/{UAT_WORKSPACE_ID}/datasets/{uat_dataset_id}/Default.BindToGateway"</span>
+    bind_body <span class="op">=</span> {
+        <span class="key">"gatewayObjectId"</span>:    UAT_GATEWAY_ID,
+        <span class="key">"datasourceObjectIds"</span>: [UAT_DATASOURCE_ID]
+    }
+    <span class="fn">requests.post</span>(bind_url, headers<span class="op">=</span>api_headers, json<span class="op">=</span>bind_body)</pre></div>
+            <div class="code-output">  SKIPPED — report-only deployment, connection already configured
+  No manual steps required</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase-card fade-section">
+      <div class="phase-number-col">
+        <div class="phase-num-circle">🔍</div>
+        <div class="phase-num-text">07</div>
+      </div>
+      <div class="phase-content">
+        <h3>Verification</h3>
+        <p class="phase-tagline">Queries the UAT stage and confirms all expected datasets and reports are present with correct names and IDs. Acts as the automated quality gate before the pipeline completes.</p>
+        <div class="phase-meta">
+          <span class="phase-chip endpoint">GET /stages/1/artifacts</span>
+          <span class="phase-chip logic">quality gate</span>
+        </div>
+        <div class="code-toggle" onclick="toggleCode(this)">
+          <span class="code-toggle-arrow">▶</span> View Notebook Code
+        </div>
+        <div class="code-walkthrough">
+          <div class="code-section">
+            <div class="code-doc">
+              <div class="code-doc-title">UAT Artifact Verification</div>
+              <div class="code-doc-desc">After deployment completes, this phase queries the UAT stage directly to confirm the expected artifacts are present. It iterates through datasets and reports, printing each artifact's display name and ID. This acts as the automated quality gate — visual confirmation that deployment succeeded at the artifact level, not just the operation level.</div>
+            </div>
+            <div class="code-block"><pre>artifacts_url <span class="op">=</span> <span class="st">f"{BASE_URL}/pipelines/{pipeline_id}/stages/1/artifacts"</span>
+response <span class="op">=</span> <span class="fn">requests.get</span>(artifacts_url, headers<span class="op">=</span>api_headers)
+
+<span class="kw">if</span> response.status_code <span class="op">==</span> <span class="nb">200</span>:
+    data <span class="op">=</span> response.json()
+    <span class="kw">for</span> item_type <span class="kw">in</span> [<span class="st">'datasets'</span>, <span class="st">'reports'</span>]:
+        items <span class="op">=</span> data.get(item_type, [])
+        <span class="kw">if</span> items:
+            <span class="fn">print</span>(<span class="st">f"  {item_type.upper()} now in UAT:"</span>)
+            <span class="kw">for</span> item <span class="kw">in</span> items:
+                <span class="fn">print</span>(<span class="st">f"    {item.get('artifactDisplayName')} | {item.get('artifactId')}"</span>)</pre></div>
+            <div class="code-output">  DATASETS now in UAT:
+    06.Lakehouse View to PBI Version 04 | a448bba1-9a3f-4460-abbc-9e9d236e2ddf
+  REPORTS now in UAT:
+    06.Lakehouse View to PBI Version 04 | c886de1e-4e2b-47aa-aee2-a47683d644b9
+
+  DEPLOYMENT COMPLETE</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase-card fade-section">
+      <div class="phase-number-col">
+        <div class="phase-num-circle">📋</div>
+        <div class="phase-num-text">08</div>
+      </div>
+      <div class="phase-content">
+        <h3>Deployment Log</h3>
+        <p class="phase-tagline">Extracts the complete deployment history into a structured pandas DataFrame. Captures operation IDs, timestamps, item names, step statuses, error details, and deployment notes — full audit trail.</p>
+        <div class="phase-meta">
+          <span class="phase-chip endpoint">GET /operations</span>
+          <span class="phase-chip">pandas DataFrame</span>
+          <span class="phase-chip logic">audit trail</span>
+        </div>
+        <div class="code-toggle" onclick="toggleCode(this)">
+          <span class="code-toggle-arrow">▶</span> View Notebook Code
+        </div>
+        <div class="code-walkthrough">
+          <div class="code-section">
+            <div class="code-doc">
+              <div class="code-doc-title">Operations History Extraction</div>
+              <div class="code-doc-desc">Retrieves every deployment operation from the pipeline, iterates through each operation's execution plan steps, and builds a flat list of log records. Each record captures the operation ID, status, timestamps, item names and types, source/target IDs, error details (if any), and the deployment note.</div>
+            </div>
+            <div class="code-block"><pre>operations_url <span class="op">=</span> <span class="st">f"{BASE_URL}/pipelines/{pipeline_id}/operations"</span>
+response <span class="op">=</span> <span class="fn">requests.get</span>(operations_url, headers<span class="op">=</span>api_headers)
+operations <span class="op">=</span> response.json().get(<span class="st">'value'</span>, [])
+
+log_data <span class="op">=</span> []
+<span class="kw">for</span> op <span class="kw">in</span> operations:
+    steps <span class="op">=</span> op.get(<span class="st">'executionPlan'</span>, {}).get(<span class="st">'steps'</span>, [])
+    <span class="kw">for</span> step <span class="kw">in</span> steps:
+        src_target <span class="op">=</span> step.get(<span class="st">'sourceAndTarget'</span>, {})
+        log_data.append({
+            <span class="key">'Operation ID'</span>:   op.get(<span class="st">'id'</span>),
+            <span class="key">'Status'</span>:         op.get(<span class="st">'status'</span>),
+            <span class="key">'Started'</span>:        op.get(<span class="st">'executionStartTime'</span>),
+            <span class="key">'Ended'</span>:          op.get(<span class="st">'executionEndTime'</span>),
+            <span class="key">'Item Name'</span>:      src_target.get(<span class="st">'sourceDisplayName'</span>),
+            <span class="key">'Item Type'</span>:      step.get(<span class="st">'type'</span>),
+            <span class="key">'Step Status'</span>:    step.get(<span class="st">'status'</span>),
+            <span class="key">'Error Code'</span>:     step.get(<span class="st">'error'</span>, {}).get(<span class="st">'errorCode'</span>, <span class="st">''</span>)
+        })
+
+df_log <span class="op">=</span> <span class="fn">pd.DataFrame</span>(log_data)</pre></div>
+            <div class="code-output">  13 deployment(s) found
+  13 total steps recorded
+  Audit trail saved to DataFrame</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"><hr></div>
+
+<!-- ================================================================
+     SIMULATOR
+     ================================================================ -->
+<section class="section fade-section" id="simulator">
+  <div class="section-label">Interactive</div>
+  <div class="section-title">Deployment Simulator</div>
+  <div class="section-desc">
+    Watch the entire deployment pipeline execute in real-time. This simulates the actual console output from a report-only deployment.
+  </div>
+
+  <div class="sim-container">
+    <div class="sim-toolbar">
+      <div class="sim-dots">
+        <div class="sim-dot red"></div>
+        <div class="sim-dot yellow"></div>
+        <div class="sim-dot green"></div>
+      </div>
+      <div class="sim-toolbar-title">Pipeline-API-workflow_v2.ipynb — Fabric Notebook</div>
+      <div class="sim-btns">
+        <button class="sim-btn sim-btn-run" id="simRunBtn" onclick="runSim()">▶ Run All</button>
+        <button class="sim-btn sim-btn-reset" onclick="resetSim()">Reset</button>
+      </div>
+    </div>
+    <div class="sim-progress-row" id="simProgressRow">
+      <div class="sim-prog-phase" data-sp="0"><div class="sim-prog-fill"></div></div>
+      <div class="sim-prog-phase" data-sp="1"><div class="sim-prog-fill"></div></div>
+      <div class="sim-prog-phase" data-sp="2"><div class="sim-prog-fill"></div></div>
+      <div class="sim-prog-phase" data-sp="3"><div class="sim-prog-fill"></div></div>
+      <div class="sim-prog-phase" data-sp="4"><div class="sim-prog-fill"></div></div>
+      <div class="sim-prog-phase" data-sp="5"><div class="sim-prog-fill"></div></div>
+      <div class="sim-prog-phase" data-sp="6"><div class="sim-prog-fill"></div></div>
+      <div class="sim-prog-phase" data-sp="7"><div class="sim-prog-fill"></div></div>
+    </div>
+    <div class="sim-phase-labels" id="simLabels">
+      <div class="sim-plabel" data-sl="0">Auth</div>
+      <div class="sim-plabel" data-sl="1">Setup</div>
+      <div class="sim-plabel" data-sl="2">Check</div>
+      <div class="sim-plabel" data-sl="3">Deploy</div>
+      <div class="sim-plabel" data-sl="4">Poll</div>
+      <div class="sim-plabel" data-sl="5">Config</div>
+      <div class="sim-plabel" data-sl="6">Verify</div>
+      <div class="sim-plabel" data-sl="7">Log</div>
+    </div>
+    <div class="sim-console" id="simConsole">
+      <div style="color: rgba(255,255,255,0.25);">Ready. Press "Run All" to begin deployment simulation.</div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"><hr></div>
+
+<!-- ================================================================
+     IMPACT — BEFORE/AFTER + CALCULATOR
+     ================================================================ -->
+<section class="section fade-section" id="impact">
+  <div class="section-label">Business Impact</div>
+  <div class="section-title">Before vs After</div>
+  <div class="section-desc">
+    The manual process required 12 portal steps with 4 human error risk points. The automated pipeline reduces this to a single notebook execution.
+  </div>
+
+  <div class="comparison">
+    <div class="comp-card comp-before">
+      <div class="comp-badge">✕ Manual Process</div>
+      <div class="comp-title">Portal-Based Deployment</div>
+      <ol class="comp-steps">
+        <li><span class="comp-step-n">1</span><span>Navigate to Fabric portal, open Deployment Pipelines</span></li>
+        <li><span class="comp-step-n">2</span><span>Select pipeline, review Dev stage contents</span></li>
+        <li><span class="comp-step-n">3</span><span>Manually select items to deploy <span class="risk-tag">Error Risk</span></span></li>
+        <li><span class="comp-step-n">4</span><span>Click Deploy — no programmatic status tracking</span></li>
+        <li><span class="comp-step-n">5</span><span>Navigate to UAT semantic model settings</span></li>
+        <li><span class="comp-step-n">6</span><span>Open Gateway and cloud connections <span class="risk-tag">Easy to Forget</span></span></li>
+        <li><span class="comp-step-n">7</span><span>Map to correct cloud connection</span></li>
+        <li><span class="comp-step-n">8</span><span>Apply and wait for propagation</span></li>
+        <li><span class="comp-step-n">9</span><span>Trigger data refresh <span class="risk-tag">Often Skipped</span></span></li>
+        <li><span class="comp-step-n">10</span><span>Manually verify datasets/reports in UAT</span></li>
+        <li><span class="comp-step-n">11</span><span>No deployment log — zero audit trail <span class="risk-tag">No Audit</span></span></li>
+        <li><span class="comp-step-n">12</span><span>Repeat from Step 1 next time</span></li>
+      </ol>
+      <div class="comp-total">
+        <div class="comp-total-num">~15–20 min</div>
+        <div class="comp-total-label">Per deployment — 4 human error risk points</div>
+      </div>
+    </div>
+
+    <div class="comp-card comp-after">
+      <div class="comp-badge">✓ Automated Pipeline</div>
+      <div class="comp-title">Notebook CI/CD</div>
+      <ol class="comp-steps">
+        <li><span class="comp-step-n">1</span><span>Open notebook, press <strong>Run All</strong></span></li>
+        <li><span class="comp-step-n">2</span><span>Auth → Validate → Deploy → Poll → Verify → Log — all automatic</span></li>
+        <li><span class="comp-step-n">3</span><span>Smart detection: report-only or full deploy based on UAT state</span></li>
+        <li><span class="comp-step-n">4</span><span>Full audit trail: operation IDs, timestamps, step details</span></li>
+      </ol>
+      <div class="comp-total">
+        <div class="comp-total-num">~1–2 sec</div>
+        <div class="comp-total-label">Zero portal clicks — complete audit trail</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALCULATOR -->
+  <div style="margin-top: 64px;">
+    <div class="section-label">ROI Calculator</div>
+    <div class="section-title">Time &amp; Cost Savings</div>
+    <div class="section-desc">
+      Adjust the sliders to model your team's deployment patterns and see the annualised impact.
+    </div>
+  </div>
+
+  <div class="calc-card">
+    <div class="calc-sliders">
+      <div class="calc-group">
+        <label>Deployments per Week</label>
+        <input type="range" id="cFreq" min="1" max="20" value="3" oninput="calc()">
+        <div class="calc-val"><span id="vFreq">3</span> <span class="calc-val-unit">deploys/week</span></div>
+      </div>
+      <div class="calc-group">
+        <label>Manual Time per Deploy</label>
+        <input type="range" id="cTime" min="5" max="30" value="15" oninput="calc()">
+        <div class="calc-val"><span id="vTime">15</span> <span class="calc-val-unit">minutes</span></div>
+      </div>
+      <div class="calc-group">
+        <label>Engineer Hourly Rate</label>
+        <input type="range" id="cCost" min="30" max="120" value="65" oninput="calc()">
+        <div class="calc-val">£<span id="vCost">65</span> <span class="calc-val-unit">/hour</span></div>
+      </div>
+    </div>
+    <div class="calc-results">
+      <div class="calc-result">
+        <div class="calc-result-val green" id="rHrsM">3.3</div>
+        <div class="calc-result-lbl">Hours Saved / Month</div>
+      </div>
+      <div class="calc-result">
+        <div class="calc-result-val green" id="rHrsY">39</div>
+        <div class="calc-result-lbl">Hours Saved / Year</div>
+      </div>
+      <div class="calc-result">
+        <div class="calc-result-val accent" id="rCostY">£2,535</div>
+        <div class="calc-result-lbl">Cost Saved / Year</div>
+      </div>
+      <div class="calc-result">
+        <div class="calc-result-val accent" id="rErrors">624</div>
+        <div class="calc-result-lbl">Error Points Eliminated</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"><hr></div>
+
+<!-- ================================================================
+     DEPLOYMENT INTELLIGENCE
+     ================================================================ -->
+<section class="section fade-section" id="intelligence">
+  <div class="section-label">Smart Logic</div>
+  <div class="section-title">Deployment Intelligence</div>
+  <div class="section-desc">
+    The pipeline automatically selects the optimal deployment strategy based on the current state of the UAT workspace.
+  </div>
+
+  <div class="intel-visual">
+    <div class="intel-box intel-question">
+      <div class="intel-q">Does UAT have<br>existing items?</div>
+    </div>
+    <div class="intel-branch" style="margin-left: 16px;">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div class="intel-arrow">
+          <span>Yes</span>
+          <svg viewBox="0 0 24 24"><path d="M5 12h14m0 0l-5-5m5 5l-5 5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="intel-box intel-answer yes">
+          <strong>Report Only</strong>
+          <span>Preserves UAT connection</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div class="intel-arrow">
+          <span>No</span>
+          <svg viewBox="0 0 24 24"><path d="M5 12h14m0 0l-5-5m5 5l-5 5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="intel-box intel-answer no">
+          <strong>Full Deploy</strong>
+          <span>Dataset + Report + Config</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="intel-callout">
+    <p><strong>Why this matters:</strong> When a semantic model is redeployed to UAT, its cloud connection mapping is lost and must be manually reconfigured. By detecting that UAT already has the semantic model and deploying only the report, the pipeline preserves the existing connection — making every subsequent deployment fully automated with zero manual intervention.</p>
+  </div>
+</section>
+
+<div class="section-divider"><hr></div>
+
+<!-- ================================================================
+     CONFIGURATION
+     ================================================================ -->
+<section class="section fade-section" id="config">
+  <div class="section-label">Adaptability</div>
+  <div class="section-title">Configuration Guide</div>
+  <div class="section-desc">
+    All configuration lives in Cell 1 of the notebook. Update only this cell to adapt the pipeline for different workspaces, items, or environments. Every other cell runs without modification.
+  </div>
+
+  <div class="config-card">
+    <table class="config-table">
+      <thead>
+        <tr><th>Parameter</th><th>Purpose</th><th>When to Change</th></tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="3" class="config-group-row">Authentication</td></tr>
+        <tr><td><code>TENANT_ID</code></td><td>Microsoft Entra ID tenant identifier</td><td>Different Azure tenant</td></tr>
+        <tr><td><code>CLIENT_ID</code></td><td>Service principal application ID</td><td>Different service principal</td></tr>
+        <tr><td><code>CLIENT_SECRET</code></td><td>Service principal secret value</td><td>Secret rotation or expiry</td></tr>
+        <tr><td colspan="3" class="config-group-row">Workspaces</td></tr>
+        <tr><td><code>DEV_WORKSPACE_ID</code></td><td>Source workspace (Development)</td><td>Different Dev workspace</td></tr>
+        <tr><td><code>UAT_WORKSPACE_ID</code></td><td>Target workspace (Test/UAT)</td><td>Different UAT workspace</td></tr>
+        <tr><td colspan="3" class="config-group-row">Pipeline</td></tr>
+        <tr><td><code>PIPELINE_NAME</code></td><td>Display name of the deployment pipeline</td><td>Different pipeline</td></tr>
+        <tr><td><code>SOURCE_STAGE_ORDER</code></td><td>Stage to deploy from (0=Dev, 1=Test, 2=Prod)</td><td>Test → Prod deployments</td></tr>
+        <tr><td colspan="3" class="config-group-row">Items to Deploy</td></tr>
+        <tr><td><code>ITEMS_TO_DEPLOY</code></td><td>Dict of datasets/reports with source IDs</td><td>Deploying different items</td></tr>
+        <tr><td colspan="3" class="config-group-row">UAT Cloud Connection</td></tr>
+        <tr><td><code>UAT_GATEWAY_ID</code></td><td>Gateway ID for cloud connection</td><td>Different gateway</td></tr>
+        <tr><td><code>UAT_DATASOURCE_ID</code></td><td>Datasource ID for Lakehouse connection</td><td>Different data source</td></tr>
+        <tr><td colspan="3" class="config-group-row">Options</td></tr>
+        <tr><td><code>ALLOW_CREATE</code></td><td>Create items if they don't exist in UAT</td><td>Restrict to updates only</td></tr>
+        <tr><td><code>ALLOW_OVERWRITE</code></td><td>Overwrite existing items in UAT</td><td>Prevent accidental overwrites</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="section-divider"><hr></div>
+
+<!-- ================================================================
+     DEPLOYMENT HISTORY
+     ================================================================ -->
+<section class="section fade-section" id="history">
+  <div class="section-label">Audit Trail</div>
+  <div class="section-title">Deployment History</div>
+  <div class="section-desc">
+    Complete log of every deployment operation extracted from the Power BI API. 13 consecutive successful deployments across 2 days.
+  </div>
+
+  <div class="history-card">
+    <table class="history-table">
+      <thead><tr><th>Timestamp</th><th>Status</th><th>Mode</th><th>Duration</th><th>Direction</th></tr></thead>
+      <tbody>
+        <tr><td>22 Feb 2026 15:54</td><td><span class="badge ok">✓ Succeeded</span></td><td><span class="badge report">Report Only</span></td><td>1.1s</td><td>Dev → UAT</td></tr>
+        <tr><td>22 Feb 2026 15:29</td><td><span class="badge ok">✓ Succeeded</span></td><td><span class="badge full">Full</span></td><td>15.6s</td><td>Dev → UAT</td></tr>
+        <tr><td>22 Feb 2026 15:22</td><td><span class="badge ok">✓ Succeeded</span></td><td><span class="badge full">Full</span></td><td>15.4s</td><td>Dev → UAT</td></tr>
+        <tr><td>22 Feb 2026 15:20</td><td><span class="badge ok">✓ Succeeded</span></td><td><span class="badge full">Full</span></td><td>4.1s</td><td>Dev → UAT</td></tr>
+        <tr><td>22 Feb 2026 09:09</td><td><span class="badge ok">✓ Succeeded</span></td><td><span class="badge full">Full</span></td><td>4.7s</td><td>Dev → UAT</td></tr>
+        <tr><td>22 Feb 2026 08:59</td><td><span class="badge ok">✓ Succeeded</span></td><td><span class="badge full">Full</span></td><td>4.5s</td><td>Dev → UAT</td></tr>
+        <tr><td>22 Feb 2026 08:51</td><td><span class="badge ok">✓ Succeeded</span></td><td><span class="badge report">Report Only</span></td><td>1.2s</td><td>Dev → UAT</td></tr>
+        <tr><td>21 Feb 2026 18:23</td><td><span class="badge ok">✓ Succeeded</span></td><td><span class="badge report">Report Only</span></td><td>1.1s</td><td>Dev → UAT</td></tr>
+        <tr><td>21 Feb 2026 17:50</td><td><span class="badge ok">✓ Succeeded</span></td><td><span class="badge report">Report Only</span></td><td>1.1s</td><td>Dev → UAT</td></tr>
+        <tr><td>21 Feb 2026 17:44</td><td><span class="badge ok">✓ Succeeded</span></td><td><span class="badge full">Full</span></td><td>33.0s</td><td>Dev → UAT</td></tr>
+        <tr><td>21 Feb 2026 17:36</td><td><span class="badge ok">✓ Succeeded</span></td><td><span class="badge report">Report Only</span></td><td>1.1s</td><td>Dev → UAT</td></tr>
+        <tr><td>21 Feb 2026 17:20</td><td><span class="badge ok">✓ Succeeded</span></td><td><span class="badge full">Full</span></td><td>15.4s</td><td>Dev → UAT</td></tr>
+        <tr><td>21 Feb 2026 15:44</td><td><span class="badge ok">✓ Succeeded</span></td><td><span class="badge full">Full</span></td><td>15.4s</td><td>Dev → UAT</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <span>Pipeline API Workflow v2 — Microsoft Fabric CI/CD Automation</span>
+  <span>Last deployment: 22 Feb 2026</span>
+</footer>
+
+<!-- ================================================================
+     JAVASCRIPT
+     ================================================================ -->
+<script>
+// ---- SCROLL-BASED FADE IN ----
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('visible'); }
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.fade-section').forEach(el => observer.observe(el));
+
+// ---- CODE WALKTHROUGH TOGGLE ----
+function toggleCode(btn) {
+  const walkthrough = btn.nextElementSibling;
+  btn.classList.toggle('open');
+  walkthrough.classList.toggle('open');
+}
+
+// ---- NAV SCROLL EFFECT ----
+const topNav = document.getElementById('topNav');
+window.addEventListener('scroll', () => {
+  topNav.classList.toggle('scrolled', window.scrollY > 20);
+});
+
+// ---- NAV ACTIVE STATE ----
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('[data-nav]');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 140) current = s.id;
+  });
+  navLinks.forEach(l => {
+    l.classList.toggle('active', l.getAttribute('href') === '#' + current);
+  });
+});
+
+// ---- CALCULATOR ----
+function calc() {
+  const f = +document.getElementById('cFreq').value;
+  const t = +document.getElementById('cTime').value;
+  const c = +document.getElementById('cCost').value;
+  document.getElementById('vFreq').textContent = f;
+  document.getElementById('vTime').textContent = t;
+  document.getElementById('vCost').textContent = c;
+  const mpm = f * 4.33 * t;
+  const hpm = mpm / 60;
+  const hpy = hpm * 12;
+  const cpy = hpy * c;
+  const epy = f * 52 * 4;
+  document.getElementById('rHrsM').textContent = hpm.toFixed(1);
+  document.getElementById('rHrsY').textContent = Math.round(hpy);
+  document.getElementById('rCostY').textContent = '£' + Math.round(cpy).toLocaleString();
+  document.getElementById('rErrors').textContent = Math.round(epy).toLocaleString();
+}
+calc();
+
+// ---- SIMULATOR ----
+const simData = [
+  { phase: 0, lines: [
+    { t: 'PHASE 1: Authentication', c: 'header' },
+    { t: '─'.repeat(50), c: 'dim' },
+    { t: '  POST https://login.microsoftonline.com/.../oauth2/v2.0/token', c: 'info' },
+    { t: '  grant_type: client_credentials', c: 'info' },
+    { t: '  Token acquired successfully', c: 'success' },
+  ]},
+  { phase: 1, lines: [
+    { t: '', c: 'info' },
+    { t: 'PHASE 2: Pipeline Setup', c: 'header' },
+    { t: '─'.repeat(50), c: 'dim' },
+    { t: '  GET /pipelines', c: 'info' },
+    { t: '  Found: AnalyticsBI_DevToUAT', c: 'success' },
+    { t: '  ID: 897b66f2-ddbf-4c77-8c64-a2e7555ce1a4', c: 'highlight' },
+    { t: '  Stage 0 (Dev): 547dab98-...  ✓', c: 'success' },
+    { t: '  Stage 1 (UAT): b34b7f5f-...  ✓', c: 'success' },
+  ]},
+  { phase: 2, lines: [
+    { t: '', c: 'info' },
+    { t: 'PHASE 3: Pre-Deployment Check', c: 'header' },
+    { t: '─'.repeat(50), c: 'dim' },
+    { t: '  GET /stages/0/artifacts', c: 'info' },
+    { t: '  06.Lakehouse View to PBI Version 04  ← DEPLOYING', c: 'highlight' },
+    { t: '  VALID  datasets: a0461642-...', c: 'success' },
+    { t: '  VALID  reports:  c0403d79-...', c: 'success' },
+    { t: '  All items validated', c: 'success' },
+  ]},
+  { phase: 3, lines: [
+    { t: '', c: 'info' },
+    { t: 'PHASE 4: Deploying Dev → UAT', c: 'header' },
+    { t: '─'.repeat(50), c: 'dim' },
+    { t: '  Checking UAT state...', c: 'info' },
+    { t: '  UAT has semantic model → preserving connection', c: 'highlight' },
+    { t: '  Mode: REPORT ONLY', c: 'highlight' },
+    { t: '  POST /deploy → HTTP 202 Accepted', c: 'success' },
+    { t: '  Operation: e9d807ee-fae1-4b0c-88b9-b7fbddf5af64', c: 'highlight' },
+  ]},
+  { phase: 4, lines: [
+    { t: '', c: 'info' },
+    { t: 'PHASE 5: Polling...', c: 'header' },
+    { t: '─'.repeat(50), c: 'dim' },
+    { t: '  GET /operations/e9d807ee-...', c: 'info' },
+    { t: '  DEPLOYMENT SUCCEEDED', c: 'success' },
+    { t: '  Duration: 1.1 seconds', c: 'success' },
+  ]},
+  { phase: 5, lines: [
+    { t: '', c: 'info' },
+    { t: 'PHASE 6: Auto-Configuration', c: 'header' },
+    { t: '─'.repeat(50), c: 'dim' },
+    { t: '  SKIPPED — report-only, connection intact', c: 'highlight' },
+  ]},
+  { phase: 6, lines: [
+    { t: '', c: 'info' },
+    { t: 'PHASE 7: Verification', c: 'header' },
+    { t: '─'.repeat(50), c: 'dim' },
+    { t: '  DATASETS in UAT: 06.Lakehouse View to PBI v04  ✓', c: 'success' },
+    { t: '  REPORTS  in UAT: 06.Lakehouse View to PBI v04  ✓', c: 'success' },
+  ]},
+  { phase: 7, lines: [
+    { t: '', c: 'info' },
+    { t: 'PHASE 8: Deployment Log', c: 'header' },
+    { t: '─'.repeat(50), c: 'dim' },
+    { t: '  13 deployments logged to DataFrame', c: 'info' },
+    { t: '', c: 'info' },
+    { t: '═'.repeat(50), c: 'dim' },
+    { t: '  DEPLOYMENT COMPLETE', c: 'success' },
+    { t: '═'.repeat(50), c: 'dim' },
+  ]},
+];
+
+let simBusy = false;
+async function runSim() {
+  if (simBusy) return;
+  simBusy = true;
+  const btn = document.getElementById('simRunBtn');
+  btn.disabled = true; btn.textContent = '● Running...';
+  const con = document.getElementById('simConsole');
+  con.innerHTML = '';
+  const bars = document.querySelectorAll('.sim-prog-phase');
+  const lbls = document.querySelectorAll('.sim-plabel');
+
+  for (const pd of simData) {
+    bars[pd.phase].classList.add('active');
+    lbls[pd.phase].classList.add('active');
+    for (const line of pd.lines) {
+      const d = document.createElement('div');
+      d.className = 'sim-line ' + line.c;
+      d.textContent = line.t;
+      con.appendChild(d);
+      con.scrollTop = con.scrollHeight;
+      await new Promise(r => setTimeout(r, 65 + Math.random() * 50));
+    }
+    await new Promise(r => setTimeout(r, 250));
+    bars[pd.phase].classList.remove('active');
+    bars[pd.phase].classList.add('done');
+    lbls[pd.phase].classList.remove('active');
+    lbls[pd.phase].classList.add('done');
+  }
+  btn.textContent = '✓ Complete';
+  simBusy = false;
+}
+function resetSim() {
+  if (simBusy) return;
+  document.querySelectorAll('.sim-prog-phase').forEach(p => p.classList.remove('active','done'));
+  document.querySelectorAll('.sim-plabel').forEach(l => l.classList.remove('active','done'));
+  document.getElementById('simConsole').innerHTML = '<div style="color:rgba(255,255,255,0.25);">Ready. Press "Run All" to begin deployment simulation.</div>';
+  const btn = document.getElementById('simRunBtn');
+  btn.disabled = false; btn.textContent = '▶ Run All';
+}
+</script>
+</body>
+</html>
